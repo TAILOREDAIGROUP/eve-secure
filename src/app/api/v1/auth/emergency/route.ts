@@ -33,9 +33,13 @@ async function checkRateLimit(identifier: string): Promise<{ allowed: boolean; r
     .limit(1);
 
   if (error) {
-    logger.error('Rate limit check failed', { error: error.message });
-    // Fail open but log it
-    return { allowed: true, remaining: RATE_LIMIT_MAX };
+    logger.error('Rate limit check failed — failing CLOSED', {
+      error: error.message,
+      severity: 'CRITICAL',
+      identifier,
+    });
+    // Fail closed: when rate limit check fails, deny the request
+    return { allowed: false, remaining: 0 };
   }
 
   const currentCount = data?.[0]?.attempt_count ?? 0;

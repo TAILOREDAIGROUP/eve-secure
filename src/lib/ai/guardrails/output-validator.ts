@@ -372,11 +372,94 @@ async function scanCrossTenantPII(
       affectedTenants: Array.from(affectedTenants),
     };
   } catch (error) {
-    logger.warn("Cross-tenant PII scan failed", {
+    // Fail closed: if we can't verify no PII leak, assume worst case
+    logger.error("Cross-tenant PII scan failed — failing CLOSED", {
       error: error instanceof Error ? error.message : String(error),
+      severity: "CRITICAL",
+      tenantId,
     });
-    return { leaked: false, affectedTenants: [] };
+    return { leaked: true, affectedTenants: ["UNKNOWN — scan failed"] };
   }
+}
+
+/**
+ * RAG grounding validation result
+ */
+export interface RAGGroundingResult {
+  grounded: boolean;
+  ungroundedClaims: string[];
+}
+
+/**
+ * Validate that AI response is grounded in retrieved context
+ * Flags statistics, dollar amounts, and regulatory citations not present in retrieved context
+ * @param response - AI-generated response text
+ * @param retrievedContext - Array of retrieved context chunks used for generation
+ * @returns Grounding result with list of ungrounded claims
+ */
+export function validateRAGGrounding(
+  response: string,
+  retrievedContext: string[]
+): RAGGroundingResult {
+  const ungroundedClaims: string[] = [];
+  const contextJoined = retrievedContext.join(' ');
+
+  // Check statistics (e.g., "85%", "3.5x", "92 percent")
+  const statsPattern = /\b\d+(?:\.\d+)?(?:%|x|percent|percentage)\b/gi;
+  const stats = response.match(statsPattern) || [];
+  for (const stat of stats) {
+    if (!contextJoined.includes(stat)) {
+      ungroundedClaims.push(`Statistic: ${stat}`);
+    }
+  }
+
+  // Check dollar amounts (e.g., "$1.2M", "$500,000", "$10 billion")
+  const dollarPattern = /\$[\d,]+(?:\.\d+)?(?:\s*(?:million|billion|trillion|[MBTKk]))?/gi;
+  const amounts = response.match(dollarPattern) || [];
+  for (const amount of amounts) {
+    if (!contextJoined.includes(amount)) {
+      ungroundedClaims.push(`Dollar amount: ${amount}`);
+    }
+  }
+
+  // Check regulatory citations (e.g., "45 CFR 164.312", "NIST SP 800-53", "HIPAA §164.312")
+  const citationPattern = /(?:§\s*\d+[\.\-]\d+(?:\.\d+)?|(?:45|42)\s*CFR\s*§?\s*\d+[\.\-]\d+(?:\([a-z]\))?|\bNIST\s*SP\s*\d+-\d+(?:\s*[A-Z]+(?:-\d+)?)?|\bHIPAA\s*§?\s*\d+[\.\-]\d+|\bSOC\s*2\s*(?:Type\s*(?:I|II))?|\bISO\s*27001(?::\d+)?|\bPCI-DSS\s*v?\d+(?:\.\d+)?)/gi;
+  const citations = response.match(citationPattern) || [];
+  for (const citation of citations) {
+    if (!contextJoined.toLowerCase().includes(citation.toLowerCase())) {
+      ungroundedClaims.push(`Regulatory citation: ${citation}`);
+    }
+  }
+
+  if (ungroundedClaims.length > 0) {
+    logger.warn('RAG grounding check found ungrounded claims', {
+      count: ungroundedClaims.length,
+      claims: ungroundedClaims.slice(0, 10),
+    });
+  }
+
+  return {
+    grounded: ungroundedClaims.length === 0,
+    ungroundedClaims,
+  };
+}
+
+/**
+ * Append disclaimer to response for ungrounded claims
+ * @param response - Original AI response
+ * @param groundingResult - Result from validateRAGGrounding
+ * @returns Response with disclaimer appended if needed
+ */
+export function appendGroundingDisclaimer(
+  response: string,
+  groundingResult: RAGGroundingResult
+): string {
+  if (groundingResult.grounded) {
+    return response;
+  }
+
+  const disclaimer = `\n\n---\n**Note:** The following claims could not be verified against retrieved sources and may require independent verification:\n${groundingResult.ungroundedClaims.map((c) => `- ${c}`).join('\n')}`;
+  return response + disclaimer;
 }
 
 /**
