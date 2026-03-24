@@ -1,6 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { v4 as uuidv4 } from "uuid";
 import { logger } from "@/lib/logger";
 import type { ProviderConfig, LLMProvider } from "./router";
+
+const MODEL_CALL_TIMEOUT_MS = 30_000;
+const RETRY_DELAYS_MS = [1000, 2000, 4000];
 
 /**
  * Query classification for intelligent model routing
@@ -18,6 +22,8 @@ export interface ModelCallResult {
   latency: number;
   cost: number;
   classification: QueryClassification;
+  degraded?: boolean;
+  error_id?: string;
 }
 
 /**
@@ -141,73 +147,131 @@ export async function callModel(args: {
   let lastError: Error | null = null;
 
   for (const model of models) {
-    try {
-      // Create client based on provider
-      const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {};
+    // Retry with exponential backoff before trying the next model
+    for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+      try {
+        // Create client based on provider
+        const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {};
 
-      if (provider === 'openrouter') {
-        clientConfig.apiKey = config.apiKey || process.env.OPENROUTER_API_KEY;
-        clientConfig.baseURL = config.baseUrl ?? 'https://openrouter.ai/api/v1';
-      } else {
-        clientConfig.apiKey = config.apiKey || process.env.ANTHROPIC_API_KEY;
+        if (provider === 'openrouter') {
+          clientConfig.apiKey = config.apiKey || process.env.OPENROUTER_API_KEY;
+          clientConfig.baseURL = config.baseUrl ?? 'https://openrouter.ai/api/v1';
+        } else {
+          clientConfig.apiKey = config.apiKey || process.env.ANTHROPIC_API_KEY;
+        }
+
+        const client = new Anthropic(clientConfig);
+
+        logger.info("LLM call initiated", {
+          provider,
+          model,
+          classification,
+          tenantId,
+          conversationId,
+          queryLength: query.length,
+          attempt,
+        });
+
+        const response = await client.messages.create(
+          {
+            model,
+            max_tokens: 4096,
+            system: systemPrompt,
+            messages: [{ role: "user", content: query }],
+          },
+          { timeout: MODEL_CALL_TIMEOUT_MS },
+        );
+
+        const latency = Date.now() - startTime;
+        const inputTokens = response.usage.input_tokens;
+        const outputTokens = response.usage.output_tokens;
+        const cost = calculateCost(model, inputTokens, outputTokens);
+
+        // Exhaustive type guard for content blocks
+        let content = "";
+        const firstBlock = response.content[0];
+        if (firstBlock) {
+          if (firstBlock.type === "text") {
+            content = firstBlock.text;
+          } else {
+            // Non-text block (tool_use, etc.) — return structured error
+            logger.warn("Non-text content block received", {
+              blockType: firstBlock.type,
+              model,
+              tenantId,
+            });
+            const errorId = uuidv4();
+            return {
+              content: "Received an unexpected response format. Please rephrase your query.",
+              model,
+              inputTokens,
+              outputTokens,
+              latency,
+              cost,
+              classification,
+              degraded: true,
+              error_id: errorId,
+            };
+          }
+        }
+
+        logger.info("LLM call success", {
+          provider,
+          model,
+          classification,
+          tenantId,
+          inputTokens,
+          outputTokens,
+          latency,
+          cost: cost.toFixed(6),
+        });
+
+        return { content, model, inputTokens, outputTokens, latency, cost, classification };
+      } catch (error) {
+        lastError = error as Error;
+        const retryDelay = RETRY_DELAYS_MS[attempt];
+
+        if (retryDelay !== undefined) {
+          logger.warn(`Model ${model} attempt ${attempt + 1} failed, retrying in ${retryDelay}ms`, {
+            error: (error as Error).message,
+            tenantId,
+            provider,
+          });
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        } else {
+          logger.warn(`Model ${model} (${provider}) exhausted retries, trying next model`, {
+            error: (error as Error).message,
+            tenantId,
+            provider,
+          });
+        }
       }
-
-      const client = new Anthropic(clientConfig);
-
-      logger.info("LLM call initiated", {
-        provider,
-        model,
-        classification,
-        tenantId,
-        conversationId,
-        queryLength: query.length,
-      });
-
-      const response = await client.messages.create({
-        model,
-        max_tokens: 4096,
-        system: systemPrompt,
-        messages: [{ role: "user", content: query }],
-      });
-
-      const latency = Date.now() - startTime;
-      const inputTokens = response.usage.input_tokens;
-      const outputTokens = response.usage.output_tokens;
-      const cost = calculateCost(model, inputTokens, outputTokens);
-
-      const firstBlock = response.content[0];
-      const content = firstBlock && firstBlock.type === "text" ? firstBlock.text : "";
-
-      logger.info("LLM call success", {
-        provider,
-        model,
-        classification,
-        tenantId,
-        inputTokens,
-        outputTokens,
-        latency,
-        cost: cost.toFixed(6),
-      });
-
-      return { content, model, inputTokens, outputTokens, latency, cost, classification };
-    } catch (error) {
-      lastError = error as Error;
-      logger.warn(`Model ${model} (${provider}) failed, trying next`, {
-        error: (error as Error).message,
-        tenantId,
-        provider,
-      });
     }
   }
 
-  logger.error("All model fallbacks exhausted", {
+  // All models and all retries exhausted — return graceful degradation
+  const errorId = uuidv4();
+  const latency = Date.now() - startTime;
+
+  logger.error("All model fallbacks exhausted — returning degraded response", {
     classification,
     tenantId,
     provider,
+    errorId,
     originalError: lastError?.message,
   });
 
-  throw new Error(`Failed to call any model via ${provider}: ${lastError?.message}`);
+  return {
+    content: "Our advisory system is temporarily unavailable. Please try again shortly.",
+    model: "none",
+    inputTokens: 0,
+    outputTokens: 0,
+    latency,
+    cost: 0,
+    classification,
+    degraded: true,
+    error_id: errorId,
+  };
 }
 
 /**

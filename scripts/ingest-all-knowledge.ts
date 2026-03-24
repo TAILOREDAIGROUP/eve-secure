@@ -2,11 +2,15 @@
  * EVE Secure — Multi-Corpus Knowledge Base Ingestion Script
  *
  * Reads all knowledge corpora (HIPAA, Legal, Threats, Insurance, Compliance Matrix),
- * generates embeddings for vector-searchable corpora (A2-A5),
+ * generates embeddings via Supabase Automatic Embeddings (gte-small),
  * loads compliance matrix (A6) into SQL table,
  * calculates SHA-256 hashes for integrity checking (A7).
  *
  * Idempotent: safe to re-run. Uses content hashes to skip unchanged documents.
+ *
+ * Note: If Supabase Automatic Embeddings triggers are enabled on the
+ * knowledge_documents table, embeddings will be auto-generated on INSERT/UPDATE.
+ * The --skip-embeddings flag relies on this behavior.
  *
  * Usage:
  *   npx tsx scripts/ingest-all-knowledge.ts
@@ -21,6 +25,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
+import { generateEmbedding } from '../src/lib/ai/embeddings/supabase-embeddings';
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -31,13 +36,6 @@ dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const EMBEDDING_PROVIDER = process.env.EMBEDDING_PROVIDER ?? 'voyage';
-const VOYAGE_API_KEY = process.env.VOYAGE_API_KEY;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const EMBEDDING_MODEL =
-  process.env.EMBEDDING_MODEL ??
-  (EMBEDDING_PROVIDER === 'voyage' ? 'voyage-law-2' : 'text-embedding-3-small');
-const EMBEDDING_DIMENSIONS = parseInt(process.env.EMBEDDING_DIMENSIONS ?? '1024', 10);
 
 const KNOWLEDGE_DIR = path.resolve(__dirname, '..', 'knowledge');
 const BATCH_SIZE = 20;
@@ -118,82 +116,20 @@ function readJSON(filePath: string): unknown {
 }
 
 // ---------------------------------------------------------------------------
-// Embedding generation (shared with ingest-knowledge.ts)
+// Embedding generation — Supabase Automatic Embeddings (gte-small)
 // ---------------------------------------------------------------------------
 
-async function generateEmbeddings(texts: string[]): Promise<number[][]> {
-  if (EMBEDDING_PROVIDER === 'openai') {
-    return generateEmbeddingsOpenAI(texts);
+async function generateEmbeddingsSupabase(texts: string[]): Promise<(number[] | null)[]> {
+  const results: (number[] | null)[] = [];
+  for (const text of texts) {
+    const embedding = await generateEmbedding(text);
+    results.push(embedding);
   }
-  return generateEmbeddingsVoyage(texts);
+  return results;
 }
 
-async function generateEmbeddingsVoyage(texts: string[]): Promise<number[][]> {
-  if (!VOYAGE_API_KEY) {
-    throw new Error('VOYAGE_API_KEY is required when EMBEDDING_PROVIDER=voyage');
-  }
-
-  const response = await fetch('https://api.voyageai.com/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${VOYAGE_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: EMBEDDING_MODEL,
-      input: texts,
-      input_type: 'document',
-    }),
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`Voyage AI API error ${response.status}: ${errorBody}`);
-  }
-
-  const data = (await response.json()) as {
-    data: Array<{ embedding: number[] }>;
-    usage: { total_tokens: number };
-  };
-
-  log('debug', `Voyage AI usage: ${data.usage.total_tokens} tokens for ${texts.length} texts`);
-  return data.data.map((d) => d.embedding);
-}
-
-async function generateEmbeddingsOpenAI(texts: string[]): Promise<number[][]> {
-  if (!OPENAI_API_KEY) {
-    throw new Error('OPENAI_API_KEY is required when EMBEDDING_PROVIDER=openai');
-  }
-
-  const response = await fetch('https://api.openai.com/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: EMBEDDING_MODEL,
-      input: texts,
-      dimensions: EMBEDDING_DIMENSIONS,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`OpenAI API error ${response.status}: ${errorBody}`);
-  }
-
-  const data = (await response.json()) as {
-    data: Array<{ embedding: number[] }>;
-    usage: { total_tokens: number };
-  };
-
-  log('debug', `OpenAI usage: ${data.usage.total_tokens} tokens for ${texts.length} texts`);
-  return data.data.map((d) => d.embedding);
-}
-
-async function generateEmbeddingsBatched(texts: string[]): Promise<number[][]> {
-  const allEmbeddings: number[][] = [];
+async function generateEmbeddingsBatched(texts: string[]): Promise<(number[] | null)[]> {
+  const allEmbeddings: (number[] | null)[] = [];
 
   for (let i = 0; i < texts.length; i += BATCH_SIZE) {
     const batch = texts.slice(i, i + BATCH_SIZE);
@@ -202,11 +138,11 @@ async function generateEmbeddingsBatched(texts: string[]): Promise<number[][]> {
       `Generating embeddings batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(texts.length / BATCH_SIZE)} (${batch.length} texts)`,
     );
 
-    const embeddings = await generateEmbeddings(batch);
+    const embeddings = await generateEmbeddingsSupabase(batch);
     allEmbeddings.push(...embeddings);
 
     if (i + BATCH_SIZE < texts.length) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 200));
     }
   }
 
@@ -266,7 +202,6 @@ function flattenHIPAA(): KnowledgeDocument[] {
     });
   }
 
-  // Add breach notification as a single document
   if (corpus.breach_notification) {
     const bnContent = JSON.stringify(corpus.breach_notification, null, 2);
     const content = `HIPAA Breach Notification Requirements\n\n${bnContent}`;
@@ -576,7 +511,7 @@ async function fetchExistingHashes(
 async function upsertKnowledgeDocuments(
   supabase: ReturnType<typeof createClient>,
   documents: KnowledgeDocument[],
-  embeddings: number[][] | null,
+  embeddings: (number[] | null)[] | null,
   existingHashes: Map<string, string>,
 ): Promise<ManifestEntry[]> {
   const manifest: ManifestEntry[] = [];
@@ -598,6 +533,8 @@ async function upsertKnowledgeDocuments(
         updated_at: now,
       };
 
+      // Include embedding if available; otherwise rely on Supabase
+      // Automatic Embeddings trigger to populate it on INSERT/UPDATE
       if (embedding) {
         record.embedding = embedding;
       }
@@ -637,7 +574,6 @@ async function upsertComplianceMatrix(
 ): Promise<{ states: number; crossRefs: number; errors: number }> {
   let errors = 0;
 
-  // Upsert state breach laws
   for (const law of stateLaws) {
     const { error } = await supabase
       .from('compliance_matrix')
@@ -668,7 +604,6 @@ async function upsertComplianceMatrix(
     }
   }
 
-  // Upsert cross-references
   for (const ref of crossReferences) {
     const { error } = await supabase
       .from('compliance_matrix')
@@ -709,6 +644,7 @@ async function main(): Promise<void> {
   const corpusFilter = args.find((a) => a.startsWith('--corpus='))?.split('=')[1]?.split(',');
 
   log('info', '=== EVE Secure — Multi-Corpus Knowledge Ingestion ===');
+  log('info', `Embedding provider: Supabase Automatic Embeddings (gte-small)`);
   log('info', `Mode: ${isDryRun ? 'DRY RUN' : isForce ? 'FORCE' : 'NORMAL'}`);
   if (corpusFilter) {
     log('info', `Corpus filter: ${corpusFilter.join(', ')}`);
@@ -789,7 +725,6 @@ async function main(): Promise<void> {
       log('info', `  Compliance Matrix: ${complianceMatrix.stateLaws.length} states, ${complianceMatrix.crossReferences.length} cross-refs`);
     }
 
-    // Write manifest
     writeManifest(
       allDocs.map((doc) => ({
         id: doc.id,
@@ -822,11 +757,9 @@ async function main(): Promise<void> {
   for (const corpus of corpora) {
     log('info', `\n--- Processing: ${corpus.name} ---`);
 
-    // Fetch existing hashes for idempotency
     const existingHashes = await fetchExistingHashes(supabase, corpus.category);
     log('info', `Existing documents in ${corpus.category}: ${existingHashes.size}`);
 
-    // Determine which documents need upsert
     const toUpsert: KnowledgeDocument[] = [];
     const unchanged: KnowledgeDocument[] = [];
 
@@ -855,24 +788,23 @@ async function main(): Promise<void> {
       continue;
     }
 
-    // Generate embeddings
-    let embeddings: number[][] | null = null;
+    // Generate embeddings via Supabase
+    let embeddings: (number[] | null)[] | null = null;
     if (!skipEmbeddings) {
       try {
-        log('info', `Generating embeddings for ${toUpsert.length} ${corpus.name} documents...`);
+        log('info', `Generating Supabase embeddings for ${toUpsert.length} ${corpus.name} documents...`);
         const texts = toUpsert.map((doc) => doc.content);
         embeddings = await generateEmbeddingsBatched(texts);
-        log('info', `Generated ${embeddings.length} embeddings`);
+        const successCount = embeddings.filter((e) => e !== null).length;
+        log('info', `Generated ${successCount}/${embeddings.length} embeddings`);
       } catch (err) {
         log('error', `Failed to generate embeddings for ${corpus.name}. Proceeding without.`, err);
       }
     }
 
-    // Upsert
     const upsertManifest = await upsertKnowledgeDocuments(supabase, toUpsert, embeddings, existingHashes);
     fullManifest.push(...upsertManifest);
 
-    // Add unchanged entries
     fullManifest.push(
       ...unchanged.map((doc) => ({
         id: doc.id,
@@ -907,7 +839,6 @@ async function main(): Promise<void> {
   log('info', `  Errors:    ${errors}`);
   log('info', `  Total:     ${fullManifest.length}`);
 
-  // Breakdown by category
   const categories = new Set(fullManifest.map((e) => e.category));
   for (const cat of categories) {
     const catEntries = fullManifest.filter((e) => e.category === cat);
