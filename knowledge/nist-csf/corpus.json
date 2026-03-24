@@ -1,0 +1,1454 @@
+{
+  "framework": "NIST CSF 2.0",
+  "version": "2.0",
+  "published": "2024-02-26",
+  "source": "National Institute of Standards and Technology",
+  "functions": [
+    {
+      "id": "GV",
+      "name": "GOVERN",
+      "description": "The organization's cybersecurity risk management strategy, expectations, and policy are established, communicated, and monitored. The GOVERN Function provides outcomes to inform what an organization may do to achieve and prioritize the outcomes of the other five Functions in the context of its mission and stakeholder expectations.",
+      "categories": [
+        {
+          "id": "GV.OC",
+          "name": "Organizational Context",
+          "description": "The circumstances — mission, stakeholder expectations, dependencies, and legal, regulatory, and contractual requirements — surrounding the organization's cybersecurity risk management decisions are understood.",
+          "subcategories": [
+            {
+              "id": "GV.OC-01",
+              "description": "The organizational mission is understood and informs cybersecurity risk management",
+              "implementation_examples": [
+                "Establish and communicate the organization's mission statement and how cybersecurity supports it",
+                "Document the relationship between critical business objectives and cybersecurity risk tolerance",
+                "Review and update mission-cybersecurity alignment annually or when the mission changes"
+              ],
+              "informative_references": [
+                "NIST SP 800-39: Managing Information Security Risk",
+                "ISO/IEC 27001:2022 Clause 4.1"
+              ]
+            },
+            {
+              "id": "GV.OC-02",
+              "description": "Internal and external stakeholders are understood, and their needs and expectations regarding cybersecurity risk management are understood and considered",
+              "implementation_examples": [
+                "Identify key internal stakeholders (board, executives, IT, legal) and external stakeholders (regulators, partners, customers)",
+                "Document stakeholder cybersecurity expectations through interviews, surveys, or contractual review",
+                "Maintain a stakeholder register that maps expectations to cybersecurity activities"
+              ],
+              "informative_references": [
+                "ISO/IEC 27001:2022 Clause 4.2",
+                "COBIT 2019 APO01"
+              ]
+            },
+            {
+              "id": "GV.OC-03",
+              "description": "Legal, regulatory, and contractual requirements regarding cybersecurity — including privacy and civil liberties obligations — are understood and managed",
+              "implementation_examples": [
+                "Maintain a compliance obligations register covering all applicable laws, regulations, and contracts",
+                "Map regulatory requirements (HIPAA, GDPR, PCI DSS, state breach notification laws) to specific cybersecurity controls",
+                "Conduct periodic legal and regulatory landscape reviews to identify new or changing obligations"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: PM-6 (Measures of Performance)",
+                "ISO/IEC 27001:2022 Clause 4.2, A.5.31"
+              ]
+            },
+            {
+              "id": "GV.OC-04",
+              "description": "Critical objectives, capabilities, and services that external stakeholders depend on or expect from the organization are understood and communicated",
+              "implementation_examples": [
+                "Identify and document business-critical services and their dependencies on cybersecurity",
+                "Communicate service level expectations and cybersecurity assurance levels to external partners",
+                "Conduct business impact analysis to prioritize critical capabilities"
+              ],
+              "informative_references": [
+                "NIST SP 800-34 Rev. 1: Contingency Planning Guide",
+                "ISO 22301:2019 Clause 8.2"
+              ]
+            },
+            {
+              "id": "GV.OC-05",
+              "description": "Outcomes, capabilities, and services that the organization depends on are understood and communicated",
+              "implementation_examples": [
+                "Map external dependencies including supply chain, cloud services, and third-party integrations",
+                "Document single points of failure and develop contingency plans for critical dependencies",
+                "Establish communication protocols with key dependency providers for cybersecurity incidents"
+              ],
+              "informative_references": [
+                "NIST SP 800-161 Rev. 1: Cybersecurity Supply Chain Risk Management",
+                "ISO/IEC 27036-2:2022"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "GV.RM",
+          "name": "Risk Management Strategy",
+          "description": "The organization's priorities, constraints, risk tolerance and appetite statements, and assumptions are established, communicated, and used to support operational risk decisions.",
+          "subcategories": [
+            {
+              "id": "GV.RM-01",
+              "description": "Risk management objectives are established and agreed to by organizational stakeholders",
+              "implementation_examples": [
+                "Define organizational risk appetite and tolerance levels with executive leadership sign-off",
+                "Document risk management objectives that align with business strategy and mission",
+                "Communicate approved risk management objectives to all relevant personnel"
+              ],
+              "informative_references": [
+                "NIST SP 800-39 Section 2.3",
+                "ISO 31000:2018 Clause 6.4"
+              ]
+            },
+            {
+              "id": "GV.RM-02",
+              "description": "Risk appetite and risk tolerance statements are established, communicated, and maintained",
+              "implementation_examples": [
+                "Define quantitative and qualitative risk appetite statements for different risk categories",
+                "Establish risk tolerance thresholds that trigger escalation or additional controls",
+                "Review and update risk appetite statements annually or following significant incidents"
+              ],
+              "informative_references": [
+                "NIST SP 800-30 Rev. 1: Guide for Conducting Risk Assessments",
+                "COSO ERM Framework 2017"
+              ]
+            },
+            {
+              "id": "GV.RM-03",
+              "description": "Cybersecurity risk management activities and outcomes are included in enterprise risk management processes",
+              "implementation_examples": [
+                "Integrate cybersecurity risk registers into the enterprise risk management framework",
+                "Include cybersecurity risk metrics in enterprise risk dashboards and board reports",
+                "Ensure cybersecurity risk assessments follow the same methodology as other enterprise risk domains"
+              ],
+              "informative_references": [
+                "NIST SP 800-39 Section 2.1",
+                "ISO/IEC 27005:2022 Clause 7"
+              ]
+            },
+            {
+              "id": "GV.RM-04",
+              "description": "Strategic direction that describes appropriate risk response options is established and communicated",
+              "implementation_examples": [
+                "Define and document risk response strategies: accept, avoid, mitigate, transfer, share",
+                "Provide guidelines for selecting appropriate risk response options based on risk level",
+                "Communicate risk response decision authority levels across the organization"
+              ],
+              "informative_references": [
+                "NIST SP 800-39 Section 3.2",
+                "ISO 31000:2018 Clause 6.5"
+              ]
+            },
+            {
+              "id": "GV.RM-05",
+              "description": "Lines of communication across the organization are established for cybersecurity risks, including risks from suppliers and other third parties",
+              "implementation_examples": [
+                "Establish formal reporting channels for cybersecurity risk escalation from operational to executive levels",
+                "Create cross-functional cybersecurity risk committees with defined meeting cadences",
+                "Implement supply chain risk communication protocols with third-party vendors"
+              ],
+              "informative_references": [
+                "NIST SP 800-161 Rev. 1 Section 2",
+                "ISO/IEC 27001:2022 A.5.6"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "GV.RR",
+          "name": "Roles, Responsibilities, and Authorities",
+          "description": "Cybersecurity roles, responsibilities, and authorities to foster accountability, performance assessment, and continuous improvement are established and communicated.",
+          "subcategories": [
+            {
+              "id": "GV.RR-01",
+              "description": "Organizational leadership is responsible and accountable for cybersecurity risk and fosters a culture that is risk-aware, ethical, and continually improving",
+              "implementation_examples": [
+                "Assign a senior executive (CISO or equivalent) with explicit accountability for cybersecurity risk",
+                "Include cybersecurity risk as a standing agenda item in board and executive committee meetings",
+                "Establish tone-from-the-top communications emphasizing cybersecurity culture and accountability"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: PM-1 (Information Security Program Plan)",
+                "ISO/IEC 27001:2022 Clause 5.1"
+              ]
+            },
+            {
+              "id": "GV.RR-02",
+              "description": "Roles, responsibilities, and authorities related to cybersecurity risk management are established, communicated, understood, and enforced",
+              "implementation_examples": [
+                "Define a RACI matrix for cybersecurity responsibilities across all departments",
+                "Document cybersecurity roles and responsibilities in job descriptions and organizational policies",
+                "Conduct periodic reviews to ensure roles remain aligned with organizational structure changes"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: PM-2 (Information Security Program Leadership Role)",
+                "ISO/IEC 27001:2022 Clause 5.3"
+              ]
+            },
+            {
+              "id": "GV.RR-03",
+              "description": "Adequate resources are allocated commensurate with the cybersecurity risk strategy, roles, responsibilities, and policies",
+              "implementation_examples": [
+                "Develop and maintain a cybersecurity budget aligned with risk assessment outcomes",
+                "Conduct workforce planning to ensure adequate cybersecurity staffing levels",
+                "Allocate dedicated resources for cybersecurity training, tools, and incident response capabilities"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: PM-3 (Information Security and Privacy Resources)",
+                "ISO/IEC 27001:2022 Clause 7.1"
+              ]
+            },
+            {
+              "id": "GV.RR-04",
+              "description": "Cybersecurity is included in human resources practices",
+              "implementation_examples": [
+                "Incorporate cybersecurity responsibilities into employee onboarding and offboarding procedures",
+                "Include cybersecurity performance metrics in employee evaluations for relevant roles",
+                "Conduct background checks for personnel with access to sensitive systems and data"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: PS family (Personnel Security)",
+                "ISO/IEC 27001:2022 A.6.1-A.6.6"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "GV.PO",
+          "name": "Policy",
+          "description": "Organizational cybersecurity policy is established, communicated, and enforced.",
+          "subcategories": [
+            {
+              "id": "GV.PO-01",
+              "description": "Policy for managing cybersecurity risks is established based on organizational context, cybersecurity strategy, and priorities and is communicated and enforced",
+              "implementation_examples": [
+                "Develop a comprehensive cybersecurity policy framework approved by senior leadership",
+                "Ensure policies are accessible to all employees and reviewed at least annually",
+                "Implement policy acknowledgment tracking to verify employee awareness"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: PL-1 (Policy and Procedures)",
+                "ISO/IEC 27001:2022 Clause 5.2"
+              ]
+            },
+            {
+              "id": "GV.PO-02",
+              "description": "Policy for managing cybersecurity risks is reviewed, updated, communicated, and enforced to reflect changes in requirements, threats, technology, and organizational mission",
+              "implementation_examples": [
+                "Establish a policy review cycle (at minimum annually) with defined triggers for off-cycle reviews",
+                "Track policy exceptions and waivers with expiration dates and risk acceptance documentation",
+                "Use version control and change management processes for policy updates"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: PL-1 (Policy and Procedures)",
+                "ISO/IEC 27002:2022 Clause 5.1"
+              ]
+            },
+            {
+              "id": "GV.PO-03",
+              "description": "Cybersecurity policy is used to define and guide implementation of cybersecurity procedures throughout the organization",
+              "implementation_examples": [
+                "Map organizational policies to specific operational procedures and standards",
+                "Develop implementation guides that translate policy requirements into actionable steps",
+                "Conduct compliance audits to verify procedures align with policy directives"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: PL-2 (System Security Plans)",
+                "ISO/IEC 27001:2022 Clause 8.1"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "GV.SC",
+          "name": "Cybersecurity Supply Chain Risk Management",
+          "description": "Cyber supply chain risk management processes are identified, established, managed, monitored, and improved by organizational stakeholders.",
+          "subcategories": [
+            {
+              "id": "GV.SC-01",
+              "description": "A cybersecurity supply chain risk management program, strategy, objectives, policies, and processes are established and agreed to by organizational stakeholders",
+              "implementation_examples": [
+                "Develop a formal C-SCRM program with documented strategy, policies, and procedures",
+                "Define supply chain risk appetite and tolerance specific to cybersecurity concerns",
+                "Obtain executive sponsorship and resource allocation for the C-SCRM program"
+              ],
+              "informative_references": [
+                "NIST SP 800-161 Rev. 1 Section 2",
+                "ISO/IEC 27036-1:2021"
+              ]
+            },
+            {
+              "id": "GV.SC-02",
+              "description": "Cybersecurity roles and responsibilities for suppliers, customers, and partners are established, communicated, and coordinated internally and externally",
+              "implementation_examples": [
+                "Include cybersecurity requirements and responsibilities in all supplier contracts and SLAs",
+                "Define shared responsibility models for cloud services and third-party integrations",
+                "Establish joint cybersecurity communication channels with critical suppliers"
+              ],
+              "informative_references": [
+                "NIST SP 800-161 Rev. 1 Section 3",
+                "ISO/IEC 27036-2:2022"
+              ]
+            },
+            {
+              "id": "GV.SC-03",
+              "description": "Cybersecurity supply chain risk management is integrated into cybersecurity and enterprise risk management, risk assessment, and improvement processes",
+              "implementation_examples": [
+                "Include supply chain risks in enterprise risk registers and risk assessment processes",
+                "Conduct periodic supply chain risk assessments for critical vendors and service providers",
+                "Incorporate supply chain risk findings into continuous improvement activities"
+              ],
+              "informative_references": [
+                "NIST SP 800-161 Rev. 1 Section 2.3",
+                "ISO/IEC 27001:2022 A.5.21"
+              ]
+            },
+            {
+              "id": "GV.SC-04",
+              "description": "Suppliers are known and prioritized by criticality",
+              "implementation_examples": [
+                "Maintain a comprehensive inventory of all suppliers with access to organizational systems or data",
+                "Categorize suppliers by criticality level based on data access, system integration, and business impact",
+                "Conduct tiered due diligence assessments based on supplier criticality classification"
+              ],
+              "informative_references": [
+                "NIST SP 800-161 Rev. 1 Appendix C",
+                "ISO/IEC 27036-2:2022 Clause 6"
+              ]
+            },
+            {
+              "id": "GV.SC-05",
+              "description": "Requirements to address cybersecurity risks in supply chains are established, prioritized, and integrated into contracts and other agreements with suppliers and other relevant third parties",
+              "implementation_examples": [
+                "Develop standard cybersecurity contract clauses for different supplier tiers",
+                "Require suppliers to demonstrate compliance with relevant security standards (SOC 2, ISO 27001)",
+                "Include right-to-audit clauses and incident notification requirements in supplier agreements"
+              ],
+              "informative_references": [
+                "NIST SP 800-161 Rev. 1 Section 3.5",
+                "ISO/IEC 27001:2022 A.5.20"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ID",
+      "name": "IDENTIFY",
+      "description": "The organization's current cybersecurity risks are understood. Understanding its assets (e.g., data, hardware, software, systems, facilities, services, people), suppliers, and related cybersecurity risks enables an organization to prioritize its efforts consistent with its risk management strategy and the mission needs identified under GOVERN.",
+      "categories": [
+        {
+          "id": "ID.AM",
+          "name": "Asset Management",
+          "description": "Assets (e.g., data, hardware, software, systems, facilities, services, people) that enable the organization to achieve business purposes are identified and managed consistent with their relative importance to organizational objectives and the organization's risk strategy.",
+          "subcategories": [
+            {
+              "id": "ID.AM-01",
+              "description": "Inventories of hardware managed by the organization are maintained",
+              "implementation_examples": [
+                "Deploy automated asset discovery tools to maintain real-time hardware inventory",
+                "Implement network access control (NAC) to identify and track connected devices",
+                "Conduct periodic physical audits to reconcile hardware inventory with discovery results"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: CM-8 (System Component Inventory)",
+                "CIS Controls v8: Control 1 (Inventory and Control of Enterprise Assets)"
+              ]
+            },
+            {
+              "id": "ID.AM-02",
+              "description": "Inventories of software, services, and systems managed by the organization are maintained",
+              "implementation_examples": [
+                "Maintain a software asset inventory including version numbers, license status, and deployment locations",
+                "Use software composition analysis tools to track all software components and dependencies",
+                "Catalog cloud services and SaaS applications using a cloud access security broker (CASB)"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: CM-8 (System Component Inventory)",
+                "CIS Controls v8: Control 2 (Inventory and Control of Software Assets)"
+              ]
+            },
+            {
+              "id": "ID.AM-03",
+              "description": "Representations of the organization's authorized network communication and internal and external network data flows are maintained",
+              "implementation_examples": [
+                "Create and maintain network architecture diagrams showing all authorized communication paths",
+                "Document internal and external data flows including data classification levels",
+                "Use network flow monitoring tools to validate actual traffic against authorized data flow documentation"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: AC-4 (Information Flow Enforcement)",
+                "ISO/IEC 27001:2022 A.8.20"
+              ]
+            },
+            {
+              "id": "ID.AM-04",
+              "description": "Inventories of services provided by suppliers are maintained",
+              "implementation_examples": [
+                "Maintain a catalog of all third-party services including vendor contacts, contract details, and data handling",
+                "Track service level agreements and cybersecurity requirements for each supplier service",
+                "Regularly reconcile supplier service inventory with procurement and accounts payable records"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: SA-4 (Acquisition Process)",
+                "NIST SP 800-161 Rev. 1"
+              ]
+            },
+            {
+              "id": "ID.AM-05",
+              "description": "Assets are prioritized based on classification, criticality, resources, and impact to the mission",
+              "implementation_examples": [
+                "Implement a data classification scheme (public, internal, confidential, restricted) applied to all assets",
+                "Conduct business impact analysis to assign criticality ratings to systems and services",
+                "Use asset classification to drive security control selection and resource allocation decisions"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: RA-2 (Security Categorization)",
+                "FIPS 199: Standards for Security Categorization"
+              ]
+            },
+            {
+              "id": "ID.AM-07",
+              "description": "Inventories of data and corresponding metadata for designated data types are maintained",
+              "implementation_examples": [
+                "Implement data discovery and classification tools to identify and catalog sensitive data",
+                "Maintain a data inventory with metadata including owner, classification, retention period, and storage location",
+                "Create and maintain data flow maps that track data throughout its lifecycle"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: CM-8, MP-4",
+                "ISO/IEC 27001:2022 A.5.9, A.5.12"
+              ]
+            },
+            {
+              "id": "ID.AM-08",
+              "description": "Systems, hardware, software, services, and data are managed throughout their life cycles",
+              "implementation_examples": [
+                "Implement lifecycle management processes covering acquisition, deployment, maintenance, and decommissioning",
+                "Track end-of-life and end-of-support dates for all hardware and software assets",
+                "Develop and execute secure disposal procedures for assets reaching end of life"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: SA-22 (Unsupported System Components)",
+                "ISO/IEC 27001:2022 A.5.9"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ID.RA",
+          "name": "Risk Assessment",
+          "description": "The cybersecurity risk to the organization, assets, and individuals is understood by the organization.",
+          "subcategories": [
+            {
+              "id": "ID.RA-01",
+              "description": "Vulnerabilities in assets are identified, validated, and recorded",
+              "implementation_examples": [
+                "Conduct regular vulnerability scans across all network-accessible assets using automated tools",
+                "Perform application security testing including SAST, DAST, and SCA for critical applications",
+                "Maintain a vulnerability database with severity ratings, affected assets, and remediation status"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: RA-5 (Vulnerability Monitoring and Scanning)",
+                "CIS Controls v8: Control 7 (Continuous Vulnerability Management)"
+              ]
+            },
+            {
+              "id": "ID.RA-02",
+              "description": "Cyber threat intelligence is received from information sharing forums and sources",
+              "implementation_examples": [
+                "Subscribe to threat intelligence feeds relevant to the organization's industry and threat landscape",
+                "Participate in information sharing organizations (ISACs/ISAOs) for sector-specific threat intelligence",
+                "Integrate threat intelligence into security monitoring and risk assessment processes"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: PM-16 (Threat Awareness Program)",
+                "NIST SP 800-150: Guide to Cyber Threat Information Sharing"
+              ]
+            },
+            {
+              "id": "ID.RA-03",
+              "description": "Internal and external threats to the organization are identified and recorded",
+              "implementation_examples": [
+                "Maintain a threat register documenting known internal and external threat actors and vectors",
+                "Conduct periodic threat modeling exercises for critical systems and applications",
+                "Use frameworks like STRIDE, MITRE ATT&CK, or PASTA to systematically identify threats"
+              ],
+              "informative_references": [
+                "NIST SP 800-30 Rev. 1: Guide for Conducting Risk Assessments",
+                "MITRE ATT&CK Framework"
+              ]
+            },
+            {
+              "id": "ID.RA-04",
+              "description": "Potential impacts and likelihoods of threats exploiting vulnerabilities are identified and recorded",
+              "implementation_examples": [
+                "Use risk matrices to assess likelihood and impact of identified threat-vulnerability pairs",
+                "Conduct quantitative risk analysis using methods like FAIR for high-priority risks",
+                "Document risk scenarios with potential business impact estimates for executive communication"
+              ],
+              "informative_references": [
+                "NIST SP 800-30 Rev. 1 Appendix D-I",
+                "ISO/IEC 27005:2022 Clause 8"
+              ]
+            },
+            {
+              "id": "ID.RA-05",
+              "description": "Threats, vulnerabilities, likelihoods, and impacts are used to understand inherent risk and inform risk response prioritization",
+              "implementation_examples": [
+                "Aggregate risk assessment data to produce an organizational risk profile and heat map",
+                "Prioritize risk treatment based on residual risk levels and organizational risk appetite",
+                "Present risk assessment results and treatment recommendations to leadership for decision-making"
+              ],
+              "informative_references": [
+                "NIST SP 800-39 Section 3",
+                "ISO/IEC 27005:2022 Clause 9"
+              ]
+            },
+            {
+              "id": "ID.RA-06",
+              "description": "Risk responses are chosen, prioritized, planned, tracked, and communicated",
+              "implementation_examples": [
+                "Develop risk treatment plans with specific actions, owners, timelines, and success criteria",
+                "Track risk treatment plan progress through regular reviews and status reporting",
+                "Communicate risk response decisions and residual risk acceptance to relevant stakeholders"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: PM-4 (Plan of Action and Milestones)",
+                "ISO/IEC 27005:2022 Clause 10"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ID.IM",
+          "name": "Improvement",
+          "description": "Improvements to the organization's cybersecurity risk management processes, procedures, and activities are identified across all CSF Functions.",
+          "subcategories": [
+            {
+              "id": "ID.IM-01",
+              "description": "Improvements are identified from evaluations",
+              "implementation_examples": [
+                "Conduct periodic self-assessments and gap analyses against the NIST CSF and relevant standards",
+                "Perform internal audits of cybersecurity controls and processes to identify improvement opportunities",
+                "Engage external assessors for independent evaluations of cybersecurity posture"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: CA-7 (Continuous Monitoring)",
+                "ISO/IEC 27001:2022 Clause 9.2"
+              ]
+            },
+            {
+              "id": "ID.IM-02",
+              "description": "Improvements are identified from security tests and exercises, including those done in coordination with suppliers and relevant third parties",
+              "implementation_examples": [
+                "Conduct regular penetration testing and red team exercises to identify security weaknesses",
+                "Perform tabletop exercises and incident response simulations to test preparedness",
+                "Include third-party and supply chain scenarios in security testing programs"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: CA-8 (Penetration Testing)",
+                "NIST SP 800-84: Guide to Test, Training, and Exercise Programs"
+              ]
+            },
+            {
+              "id": "ID.IM-03",
+              "description": "Improvements are identified from execution of operational processes, procedures, and activities",
+              "implementation_examples": [
+                "Implement after-action reviews following security incidents, changes, and exercises",
+                "Track and analyze cybersecurity operational metrics to identify trends and improvement needs",
+                "Establish a lessons-learned repository accessible to all cybersecurity personnel"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: IR-4 (Incident Handling)",
+                "ISO/IEC 27001:2022 Clause 10.1"
+              ]
+            },
+            {
+              "id": "ID.IM-04",
+              "description": "Incident response plans and other cybersecurity plans that affect operations are established, communicated, maintained, and improved",
+              "implementation_examples": [
+                "Develop and maintain a comprehensive incident response plan with defined roles and procedures",
+                "Conduct regular reviews and updates of cybersecurity plans based on lessons learned",
+                "Ensure all relevant personnel are trained on and have access to current cybersecurity plans"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: IR-1 (Incident Response Policy and Procedures)",
+                "NIST SP 800-61 Rev. 2: Computer Security Incident Handling Guide"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "PR",
+      "name": "PROTECT",
+      "description": "Safeguards to manage the organization's cybersecurity risks are used. Once assets and risks are identified and prioritized, PROTECT supports the ability to secure those assets to prevent or lower the likelihood and impact of adverse cybersecurity events.",
+      "categories": [
+        {
+          "id": "PR.AA",
+          "name": "Identity Management, Authentication, and Access Control",
+          "description": "Access to physical and logical assets is limited to authorized users, services, and hardware and managed commensurate with the assessed risk of unauthorized access.",
+          "subcategories": [
+            {
+              "id": "PR.AA-01",
+              "description": "Identities and credentials for authorized users, services, and hardware are managed by the organization",
+              "implementation_examples": [
+                "Implement centralized identity management with automated provisioning and deprovisioning workflows",
+                "Enforce unique identity assignment for all users, service accounts, and hardware devices",
+                "Conduct periodic access reviews and recertification for all identity types"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: IA family (Identification and Authentication)",
+                "CIS Controls v8: Control 6 (Access Control Management)"
+              ]
+            },
+            {
+              "id": "PR.AA-02",
+              "description": "Identities are proofed and bound to credentials based on the context of interactions",
+              "implementation_examples": [
+                "Implement identity proofing procedures aligned with NIST SP 800-63A assurance levels",
+                "Bind credentials to verified identities through secure enrollment processes",
+                "Use risk-based authentication that adjusts assurance requirements based on transaction context"
+              ],
+              "informative_references": [
+                "NIST SP 800-63-3: Digital Identity Guidelines",
+                "NIST SP 800-53 Rev. 5: IA-12 (Identity Proofing)"
+              ]
+            },
+            {
+              "id": "PR.AA-03",
+              "description": "Users, services, and hardware are authenticated",
+              "implementation_examples": [
+                "Implement multi-factor authentication (MFA) for all privileged and remote access",
+                "Deploy certificate-based authentication for services and hardware devices",
+                "Enforce strong password policies and phishing-resistant authentication methods"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: IA-2 (Identification and Authentication)",
+                "NIST SP 800-63B: Authentication and Lifecycle Management"
+              ]
+            },
+            {
+              "id": "PR.AA-04",
+              "description": "Identity assertions are protected, conveyed, and verified",
+              "implementation_examples": [
+                "Use secure federation protocols (SAML, OIDC) for identity assertion exchange",
+                "Implement token-based authentication with appropriate expiration and refresh mechanisms",
+                "Validate identity assertions at each relying party before granting access"
+              ],
+              "informative_references": [
+                "NIST SP 800-63C: Federation and Assertions",
+                "NIST SP 800-53 Rev. 5: IA-8 (Identification and Authentication - Non-Organizational Users)"
+              ]
+            },
+            {
+              "id": "PR.AA-05",
+              "description": "Access permissions, entitlements, and authorizations are defined in a policy, managed, enforced, and reviewed, and incorporate the principles of least privilege and separation of duties",
+              "implementation_examples": [
+                "Implement role-based access control (RBAC) with documented authorization policies",
+                "Enforce least privilege through regular access reviews and automated privilege reduction",
+                "Implement separation of duties controls for critical business and security functions"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: AC-2 (Account Management), AC-6 (Least Privilege)",
+                "CIS Controls v8: Control 6.8"
+              ]
+            },
+            {
+              "id": "PR.AA-06",
+              "description": "Physical access to assets is managed, monitored, and enforced commensurate with risk",
+              "implementation_examples": [
+                "Implement physical access control systems with badge readers and visitor management",
+                "Monitor physical access through CCTV and security personnel at sensitive areas",
+                "Conduct periodic reviews of physical access permissions and facility security assessments"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: PE family (Physical and Environmental Protection)",
+                "ISO/IEC 27001:2022 A.7.1-A.7.14"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "PR.AT",
+          "name": "Awareness and Training",
+          "description": "The organization's personnel are provided with cybersecurity awareness and training so that they can perform their cybersecurity-related tasks.",
+          "subcategories": [
+            {
+              "id": "PR.AT-01",
+              "description": "Personnel are provided with awareness and training so that they possess the knowledge and skills to perform general tasks with cybersecurity risks in mind",
+              "implementation_examples": [
+                "Deliver annual cybersecurity awareness training to all employees covering phishing, social engineering, and safe computing",
+                "Conduct periodic phishing simulations and provide targeted training based on results",
+                "Maintain training records and track completion rates across the organization"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: AT-2 (Literacy Training and Awareness)",
+                "NIST SP 800-50: Building an Information Technology Security Awareness and Training Program"
+              ]
+            },
+            {
+              "id": "PR.AT-02",
+              "description": "Individuals in specialized roles are provided with awareness and training so that they possess the knowledge and skills to perform relevant tasks with cybersecurity risks in mind",
+              "implementation_examples": [
+                "Provide role-specific security training for developers, administrators, and incident responders",
+                "Support professional certifications and continuing education for cybersecurity staff",
+                "Conduct hands-on training exercises and simulations relevant to specialized roles"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: AT-3 (Role-Based Training)",
+                "NICE Workforce Framework for Cybersecurity (SP 800-181 Rev. 1)"
+              ]
+            },
+            {
+              "id": "PR.AT-03",
+              "description": "Senior executives understand their roles and responsibilities for cybersecurity and how to fulfill them",
+              "implementation_examples": [
+                "Provide targeted cybersecurity briefings for board members and executives quarterly",
+                "Conduct executive tabletop exercises focused on cyber incident decision-making",
+                "Deliver training on regulatory obligations and fiduciary duties related to cybersecurity"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: AT-3(5) (Processing Personally Identifiable Information)",
+                "SEC Cybersecurity Risk Management, Strategy, Governance Rules (2023)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "PR.DS",
+          "name": "Data Security",
+          "description": "Data are managed consistent with the organization's risk strategy to protect the confidentiality, integrity, and availability of information.",
+          "subcategories": [
+            {
+              "id": "PR.DS-01",
+              "description": "The confidentiality, integrity, and availability of data-at-rest are protected",
+              "implementation_examples": [
+                "Encrypt sensitive data at rest using AES-256 or equivalent encryption standards",
+                "Implement file integrity monitoring (FIM) for critical data stores and configuration files",
+                "Deploy data loss prevention (DLP) controls for data repositories containing sensitive information"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: SC-28 (Protection of Information at Rest)",
+                "NIST SP 800-111: Guide to Storage Encryption Technologies"
+              ]
+            },
+            {
+              "id": "PR.DS-02",
+              "description": "The confidentiality, integrity, and availability of data-in-transit are protected",
+              "implementation_examples": [
+                "Enforce TLS 1.2 or higher for all data in transit across networks",
+                "Implement VPN or encrypted tunnels for sensitive communications over untrusted networks",
+                "Deploy certificate management and monitoring to ensure encryption is properly maintained"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: SC-8 (Transmission Confidentiality and Integrity)",
+                "NIST SP 800-52 Rev. 2: Guidelines for TLS Implementations"
+              ]
+            },
+            {
+              "id": "PR.DS-10",
+              "description": "The confidentiality, integrity, and availability of data-in-use are protected",
+              "implementation_examples": [
+                "Implement endpoint DLP controls to monitor and protect data while being processed",
+                "Use memory encryption and secure enclaves for processing sensitive data where available",
+                "Apply application-level controls to prevent unauthorized data access during processing"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: SC-4 (Information in Shared System Resources)",
+                "ISO/IEC 27001:2022 A.8.11"
+              ]
+            },
+            {
+              "id": "PR.DS-11",
+              "description": "Backups of data are created, protected, maintained, and tested",
+              "implementation_examples": [
+                "Implement automated backup schedules with appropriate retention policies for all critical data",
+                "Store backups in geographically separate locations with encryption and access controls",
+                "Conduct regular backup restoration tests to verify data integrity and recovery capability"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: CP-9 (System Backup)",
+                "ISO/IEC 27001:2022 A.8.13"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "PR.PS",
+          "name": "Platform Security",
+          "description": "The hardware, software (e.g., firmware, operating systems, applications), and services of physical and virtual platforms are managed consistent with the organization's risk strategy to protect their confidentiality, integrity, and availability.",
+          "subcategories": [
+            {
+              "id": "PR.PS-01",
+              "description": "Configuration management practices are established and applied",
+              "implementation_examples": [
+                "Establish and enforce secure configuration baselines for all systems using CIS Benchmarks or DISA STIGs",
+                "Implement automated configuration management and drift detection tools",
+                "Maintain configuration change management processes with approval workflows and audit trails"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: CM-2 (Baseline Configuration), CM-6 (Configuration Settings)",
+                "CIS Controls v8: Control 4 (Secure Configuration of Enterprise Assets and Software)"
+              ]
+            },
+            {
+              "id": "PR.PS-02",
+              "description": "Software is maintained, replaced, and removed commensurate with risk",
+              "implementation_examples": [
+                "Implement automated patch management processes with defined SLAs based on vulnerability severity",
+                "Maintain a software lifecycle management program tracking end-of-life and unsupported software",
+                "Remove unauthorized software through application whitelisting and periodic audits"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: SI-2 (Flaw Remediation), CM-11 (User-Installed Software)",
+                "CIS Controls v8: Control 2.5"
+              ]
+            },
+            {
+              "id": "PR.PS-03",
+              "description": "Hardware is maintained, replaced, and removed commensurate with risk",
+              "implementation_examples": [
+                "Track hardware warranty, end-of-life, and end-of-support dates with automated alerts",
+                "Implement secure hardware disposal procedures including data sanitization and destruction certification",
+                "Maintain spare hardware inventory for critical systems to ensure rapid replacement"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: MA-2 (Controlled Maintenance), MA-6 (Timely Maintenance)",
+                "NIST SP 800-88 Rev. 1: Guidelines for Media Sanitization"
+              ]
+            },
+            {
+              "id": "PR.PS-04",
+              "description": "Log records are generated and made available for continuous monitoring",
+              "implementation_examples": [
+                "Configure comprehensive logging across all systems, applications, and network devices",
+                "Centralize log collection in a SIEM or log management platform with defined retention periods",
+                "Protect log integrity through write-once storage, encryption, and access controls"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: AU family (Audit and Accountability)",
+                "NIST SP 800-92: Guide to Computer Security Log Management"
+              ]
+            },
+            {
+              "id": "PR.PS-05",
+              "description": "Installation and execution of unauthorized software is prevented",
+              "implementation_examples": [
+                "Deploy application whitelisting or software restriction policies on endpoint systems",
+                "Implement code signing requirements for internally developed applications",
+                "Use endpoint detection tools to block execution of unauthorized or malicious software"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: CM-7 (Least Functionality), CM-11 (User-Installed Software)",
+                "CIS Controls v8: Control 2.5, 2.6"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "PR.IR",
+          "name": "Technology Infrastructure Resilience",
+          "description": "Security architectures are managed with the organization's risk strategy to protect asset confidentiality, integrity, and availability, and organizational resilience.",
+          "subcategories": [
+            {
+              "id": "PR.IR-01",
+              "description": "Networks and environments are protected from unauthorized logical access and usage",
+              "implementation_examples": [
+                "Implement network segmentation using firewalls, VLANs, and micro-segmentation",
+                "Deploy zero trust architecture principles for network access decisions",
+                "Monitor and enforce network access policies using intrusion prevention systems"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: SC-7 (Boundary Protection), AC-4 (Information Flow Enforcement)",
+                "NIST SP 800-207: Zero Trust Architecture"
+              ]
+            },
+            {
+              "id": "PR.IR-02",
+              "description": "The organization's technology assets are protected from environmental threats",
+              "implementation_examples": [
+                "Implement environmental controls including fire suppression, HVAC, and water detection in data centers",
+                "Deploy uninterruptible power supplies (UPS) and backup generators for critical infrastructure",
+                "Conduct periodic environmental risk assessments for facilities housing critical technology"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: PE-9 through PE-18",
+                "ISO/IEC 27001:2022 A.7.5, A.7.11, A.7.12"
+              ]
+            },
+            {
+              "id": "PR.IR-03",
+              "description": "Mechanisms are implemented to achieve resilience requirements in normal and adverse situations",
+              "implementation_examples": [
+                "Deploy redundant systems and failover mechanisms for critical services and infrastructure",
+                "Implement load balancing and auto-scaling to maintain availability during demand spikes",
+                "Design disaster recovery architecture with defined RPO and RTO for all critical systems"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: CP-2 (Contingency Plan), SI-13 (Predictable Failure Prevention)",
+                "ISO 22301:2019 Clause 8"
+              ]
+            },
+            {
+              "id": "PR.IR-04",
+              "description": "Adequate resource capacity to ensure availability is maintained",
+              "implementation_examples": [
+                "Implement capacity monitoring with alerting thresholds for compute, storage, and network resources",
+                "Conduct capacity planning exercises aligned with business growth projections",
+                "Use auto-scaling and elastic cloud resources to dynamically adjust to demand"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: SC-5 (Denial-of-Service Protection)",
+                "ISO/IEC 27001:2022 A.8.6"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DE",
+      "name": "DETECT",
+      "description": "Possible cybersecurity attacks and compromises are found and analyzed. DETECT enables timely discovery and analysis of anomalies, indicators of compromise, and other potentially adverse cybersecurity events that may indicate that cybersecurity attacks and incidents are occurring.",
+      "categories": [
+        {
+          "id": "DE.CM",
+          "name": "Continuous Monitoring",
+          "description": "Assets are monitored to find anomalies, indicators of compromise, and other potentially adverse events.",
+          "subcategories": [
+            {
+              "id": "DE.CM-01",
+              "description": "Networks and network services are monitored to find potentially adverse events",
+              "implementation_examples": [
+                "Deploy network intrusion detection/prevention systems (IDS/IPS) at network boundaries and critical segments",
+                "Implement network traffic analysis tools to identify anomalous patterns and behaviors",
+                "Monitor DNS, DHCP, and proxy logs for indicators of compromise and data exfiltration"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: SI-4 (System Monitoring)",
+                "CIS Controls v8: Control 13 (Network Monitoring and Defense)"
+              ]
+            },
+            {
+              "id": "DE.CM-02",
+              "description": "The physical environment is monitored to find potentially adverse events",
+              "implementation_examples": [
+                "Deploy security cameras, motion sensors, and alarm systems in sensitive areas",
+                "Implement physical intrusion detection systems with real-time alerting",
+                "Monitor environmental sensors (temperature, humidity, water) in data center facilities"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: PE-6 (Monitoring Physical Access), PE-20",
+                "ISO/IEC 27001:2022 A.7.4"
+              ]
+            },
+            {
+              "id": "DE.CM-03",
+              "description": "Personnel activity and technology usage are monitored to find potentially adverse events",
+              "implementation_examples": [
+                "Implement user behavior analytics (UBA) to detect insider threat indicators",
+                "Monitor privileged account activity with enhanced logging and session recording",
+                "Deploy endpoint detection and response (EDR) tools to monitor system activity"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: AC-2(12) (Account Monitoring for Atypical Usage)",
+                "CIS Controls v8: Control 8 (Audit Log Management)"
+              ]
+            },
+            {
+              "id": "DE.CM-06",
+              "description": "External service provider activities and services are monitored to find potentially adverse events",
+              "implementation_examples": [
+                "Monitor cloud service provider security dashboards and compliance status",
+                "Implement CASB or cloud-native security tools to monitor third-party service activity",
+                "Review external provider security reports (SOC 2, penetration tests) on a regular cadence"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: SA-9 (External System Services)",
+                "NIST SP 800-161 Rev. 1"
+              ]
+            },
+            {
+              "id": "DE.CM-09",
+              "description": "Computing hardware and software, runtime environments, and their data are monitored to find potentially adverse events",
+              "implementation_examples": [
+                "Deploy endpoint detection and response (EDR) across all managed endpoints",
+                "Implement application runtime monitoring and anomaly detection",
+                "Monitor container and serverless runtime environments for suspicious activities"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: SI-4 (System Monitoring), SI-7 (Software, Firmware, and Information Integrity)",
+                "CIS Controls v8: Control 10 (Malware Defenses)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "DE.AE",
+          "name": "Adverse Event Analysis",
+          "description": "Anomalies, indicators of compromise, and other potentially adverse events are analyzed to characterize the events and detect cybersecurity incidents.",
+          "subcategories": [
+            {
+              "id": "DE.AE-01",
+              "description": "The baseline of expected behavior for networks and expected data flows for users and systems is established and maintained",
+              "implementation_examples": [
+                "Document and maintain baselines for normal network traffic patterns and data flows",
+                "Implement machine learning-based behavioral analytics to establish and update baselines",
+                "Regularly review and update baselines to account for legitimate changes in the environment"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: SI-4(13) (Analyze Traffic/Event Patterns)",
+                "CIS Controls v8: Control 13.6"
+              ]
+            },
+            {
+              "id": "DE.AE-02",
+              "description": "Potentially adverse events are analyzed to better understand associated activities",
+              "implementation_examples": [
+                "Correlate events from multiple data sources using SIEM to identify attack patterns",
+                "Perform root cause analysis on detected anomalies to determine if they indicate actual incidents",
+                "Use threat intelligence to enrich event analysis and identify known attack techniques"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: IR-4 (Incident Handling), SI-4 (System Monitoring)",
+                "NIST SP 800-61 Rev. 2 Section 3.2"
+              ]
+            },
+            {
+              "id": "DE.AE-03",
+              "description": "Information is correlated from multiple sources",
+              "implementation_examples": [
+                "Aggregate and normalize security event data from all sources into a centralized SIEM",
+                "Create correlation rules that combine indicators across network, endpoint, and application layers",
+                "Implement automated threat hunting workflows that cross-reference multiple data sources"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: AU-6(5) (Integrated Analysis of Audit Records)",
+                "NIST SP 800-92"
+              ]
+            },
+            {
+              "id": "DE.AE-04",
+              "description": "The estimated impact and scope of adverse events are understood",
+              "implementation_examples": [
+                "Develop impact assessment procedures that evaluate the scope and severity of detected events",
+                "Use asset criticality ratings to prioritize event investigation and response",
+                "Implement automated triage workflows that estimate event impact based on affected assets"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: IR-4 (Incident Handling)",
+                "NIST SP 800-61 Rev. 2 Section 3.2"
+              ]
+            },
+            {
+              "id": "DE.AE-06",
+              "description": "Information on adverse events is provided to authorized staff and tools",
+              "implementation_examples": [
+                "Configure automated alerting and notification workflows for detected adverse events",
+                "Integrate detection outputs with incident management and ticketing systems",
+                "Provide real-time security dashboards accessible to SOC analysts and incident responders"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: IR-6 (Incident Reporting)",
+                "ISO/IEC 27001:2022 A.6.8"
+              ]
+            },
+            {
+              "id": "DE.AE-07",
+              "description": "Cyber threat intelligence and other contextual information are integrated into the analysis",
+              "implementation_examples": [
+                "Integrate threat intelligence feeds with SIEM for automated indicator enrichment",
+                "Correlate detected events with known threat actor tactics, techniques, and procedures (TTPs)",
+                "Use threat intelligence platforms to provide context during event analysis and investigation"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: PM-16 (Threat Awareness Program)",
+                "NIST SP 800-150"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "RS",
+      "name": "RESPOND",
+      "description": "Actions regarding a detected cybersecurity incident are taken. RESPOND supports the ability to contain the impact of cybersecurity incidents. Outcomes within this Function cover incident management, analysis, mitigation, reporting, and communication.",
+      "categories": [
+        {
+          "id": "RS.MA",
+          "name": "Incident Management",
+          "description": "Responses to detected cybersecurity incidents are managed.",
+          "subcategories": [
+            {
+              "id": "RS.MA-01",
+              "description": "The incident response plan is executed in coordination with relevant third parties once an incident is declared",
+              "implementation_examples": [
+                "Activate the incident response plan with defined command structure and communication protocols",
+                "Engage pre-identified third parties (legal counsel, forensics, PR, law enforcement) as appropriate",
+                "Document all incident response actions with timestamps for post-incident review"
+              ],
+              "informative_references": [
+                "NIST SP 800-61 Rev. 2 Section 3.4",
+                "NIST SP 800-53 Rev. 5: IR-4 (Incident Handling)"
+              ]
+            },
+            {
+              "id": "RS.MA-02",
+              "description": "Incident reports are triaged and validated",
+              "implementation_examples": [
+                "Implement standardized incident triage procedures with defined severity classification criteria",
+                "Validate reported incidents through initial investigation and evidence collection",
+                "Prioritize incident response based on validated severity, scope, and business impact"
+              ],
+              "informative_references": [
+                "NIST SP 800-61 Rev. 2 Section 3.2",
+                "ISO/IEC 27035-2:2023"
+              ]
+            },
+            {
+              "id": "RS.MA-03",
+              "description": "Incidents are categorized and prioritized",
+              "implementation_examples": [
+                "Apply incident categorization taxonomy (data breach, malware, DDoS, insider threat, etc.)",
+                "Assign priority levels based on organizational impact, data sensitivity, and regulatory requirements",
+                "Adjust categorization and priority as new information emerges during investigation"
+              ],
+              "informative_references": [
+                "NIST SP 800-61 Rev. 2 Section 3.2.6",
+                "ISO/IEC 27035-2:2023 Clause 5"
+              ]
+            },
+            {
+              "id": "RS.MA-04",
+              "description": "Incidents are escalated or elevated as needed",
+              "implementation_examples": [
+                "Define escalation criteria and paths for different incident severity levels",
+                "Implement automated escalation triggers based on time thresholds and incident characteristics",
+                "Ensure executive notification procedures are followed for high-severity incidents"
+              ],
+              "informative_references": [
+                "NIST SP 800-61 Rev. 2 Section 2.3",
+                "ISO/IEC 27035-2:2023 Clause 5.4"
+              ]
+            },
+            {
+              "id": "RS.MA-05",
+              "description": "The criteria for initiating incident recovery are applied",
+              "implementation_examples": [
+                "Define clear criteria for transitioning from incident response to recovery operations",
+                "Document containment verification requirements before beginning system restoration",
+                "Obtain approval from incident commander and system owners before initiating recovery"
+              ],
+              "informative_references": [
+                "NIST SP 800-61 Rev. 2 Section 3.4",
+                "NIST SP 800-53 Rev. 5: CP-10 (System Recovery and Reconstitution)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "RS.AN",
+          "name": "Incident Analysis",
+          "description": "Investigations are conducted to ensure effective response and support forensics and recovery activities.",
+          "subcategories": [
+            {
+              "id": "RS.AN-03",
+              "description": "Analysis is performed to establish what has taken place during an incident and the root cause of the incident",
+              "implementation_examples": [
+                "Conduct timeline analysis to reconstruct the sequence of events during the incident",
+                "Perform root cause analysis using forensic evidence, logs, and system artifacts",
+                "Document attack vectors, exploited vulnerabilities, and threat actor techniques used"
+              ],
+              "informative_references": [
+                "NIST SP 800-86: Guide to Integrating Forensic Techniques",
+                "NIST SP 800-61 Rev. 2 Section 3.2"
+              ]
+            },
+            {
+              "id": "RS.AN-06",
+              "description": "Actions performed during an investigation are recorded, and the records' integrity and provenance are preserved",
+              "implementation_examples": [
+                "Maintain a chain of custody log for all digital evidence and forensic artifacts",
+                "Use write-protected storage and cryptographic hashing to preserve evidence integrity",
+                "Document all investigative actions with timestamps, personnel, and methodologies used"
+              ],
+              "informative_references": [
+                "NIST SP 800-86 Section 3",
+                "ISO/IEC 27037:2012"
+              ]
+            },
+            {
+              "id": "RS.AN-07",
+              "description": "Incident data and metadata are collected, and their integrity and provenance are preserved",
+              "implementation_examples": [
+                "Implement automated log and artifact collection during incident response",
+                "Preserve original evidence using forensic imaging and write-blocking techniques",
+                "Store collected data in secure, access-controlled repositories with integrity verification"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: IR-4 (Incident Handling), AU-9 (Protection of Audit Information)",
+                "NIST SP 800-86"
+              ]
+            },
+            {
+              "id": "RS.AN-08",
+              "description": "An incident's magnitude is estimated and validated",
+              "implementation_examples": [
+                "Assess the number of affected systems, users, and data records during an incident",
+                "Evaluate business impact including financial losses, operational disruption, and reputational damage",
+                "Update magnitude estimates as additional information becomes available during investigation"
+              ],
+              "informative_references": [
+                "NIST SP 800-61 Rev. 2 Section 3.2.6",
+                "ISO/IEC 27035-2:2023 Clause 5.3"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "RS.CO",
+          "name": "Incident Response Reporting and Communication",
+          "description": "Response activities are coordinated with internal and external stakeholders as required by laws, regulations, or policies.",
+          "subcategories": [
+            {
+              "id": "RS.CO-02",
+              "description": "Internal and external stakeholders are notified of incidents",
+              "implementation_examples": [
+                "Follow defined notification procedures for internal teams, management, and board as appropriate",
+                "Comply with regulatory breach notification requirements (state laws, HIPAA, GDPR) within mandated timeframes",
+                "Coordinate with law enforcement notification as required by policy or legal obligation"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: IR-6 (Incident Reporting)",
+                "NIST SP 800-61 Rev. 2 Section 2.3.4"
+              ]
+            },
+            {
+              "id": "RS.CO-03",
+              "description": "Information is shared with designated internal and external stakeholders",
+              "implementation_examples": [
+                "Share indicators of compromise with ISACs, ISAOs, and trusted partners through established channels",
+                "Provide regular incident status updates to executive leadership and affected business units",
+                "Coordinate with peer organizations and government agencies to share actionable threat intelligence"
+              ],
+              "informative_references": [
+                "NIST SP 800-150: Guide to Cyber Threat Information Sharing",
+                "NIST SP 800-53 Rev. 5: PM-15 (Security and Privacy Groups and Associations)"
+              ]
+            },
+            {
+              "id": "RS.CO-04",
+              "description": "Coordination with affected parties is conducted for effective response and recovery",
+              "implementation_examples": [
+                "Establish coordination procedures with incident response partners, vendors, and service providers",
+                "Conduct joint response activities with affected third parties and supply chain partners",
+                "Maintain current contact information and communication channels for all coordination parties"
+              ],
+              "informative_references": [
+                "NIST SP 800-61 Rev. 2 Section 2.3.4",
+                "ISO/IEC 27035-3:2020 Clause 6"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "RS.MI",
+          "name": "Incident Mitigation",
+          "description": "Activities are performed to prevent expansion of an event and to mitigate its effects.",
+          "subcategories": [
+            {
+              "id": "RS.MI-01",
+              "description": "Incidents are contained",
+              "implementation_examples": [
+                "Execute containment strategies appropriate to the incident type (network isolation, account disabling, system quarantine)",
+                "Implement short-term containment to stop immediate damage while preserving evidence",
+                "Deploy long-term containment measures that allow business operations to continue during remediation"
+              ],
+              "informative_references": [
+                "NIST SP 800-61 Rev. 2 Section 3.3",
+                "NIST SP 800-53 Rev. 5: IR-4 (Incident Handling)"
+              ]
+            },
+            {
+              "id": "RS.MI-02",
+              "description": "Incidents are eradicated",
+              "implementation_examples": [
+                "Remove malware, unauthorized access mechanisms, and attacker persistence mechanisms from affected systems",
+                "Patch or mitigate the vulnerabilities that were exploited during the incident",
+                "Verify eradication completeness through scanning, monitoring, and forensic analysis"
+              ],
+              "informative_references": [
+                "NIST SP 800-61 Rev. 2 Section 3.4",
+                "NIST SP 800-83 Rev. 1: Guide to Malware Incident Prevention and Handling"
+              ]
+            },
+            {
+              "id": "RS.MI-03",
+              "description": "Newly identified vulnerabilities are mitigated or documented as accepted risks",
+              "implementation_examples": [
+                "Prioritize remediation of vulnerabilities discovered during incident investigation",
+                "Apply emergency patches or compensating controls for exploited vulnerabilities",
+                "Document risk acceptance decisions for vulnerabilities that cannot be immediately remediated"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: RA-5 (Vulnerability Monitoring and Scanning)",
+                "NIST SP 800-40 Rev. 4: Guide to Enterprise Patch Management Planning"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "RC",
+      "name": "RECOVER",
+      "description": "Assets and operations affected by a cybersecurity incident are restored. RECOVER supports timely restoration of normal operations to reduce the impact from cybersecurity incidents and enable appropriate communication during recovery efforts.",
+      "categories": [
+        {
+          "id": "RC.RP",
+          "name": "Incident Recovery Plan Execution",
+          "description": "Restoration activities are performed to ensure operational availability of systems and services affected by cybersecurity incidents.",
+          "subcategories": [
+            {
+              "id": "RC.RP-01",
+              "description": "The recovery portion of the incident response plan is executed once initiated from the incident response process",
+              "implementation_examples": [
+                "Execute system restoration procedures following verified containment and eradication",
+                "Restore systems from known-good backups or rebuild from trusted baselines",
+                "Verify system integrity and functionality before returning systems to production"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: CP-10 (System Recovery and Reconstitution)",
+                "NIST SP 800-61 Rev. 2 Section 3.4"
+              ]
+            },
+            {
+              "id": "RC.RP-02",
+              "description": "Recovery actions are selected, scoped, prioritized, and performed",
+              "implementation_examples": [
+                "Prioritize recovery of critical systems based on business impact analysis and organizational priorities",
+                "Execute recovery in phases, validating each phase before proceeding to the next",
+                "Track recovery progress against defined RPO and RTO objectives"
+              ],
+              "informative_references": [
+                "NIST SP 800-34 Rev. 1: Contingency Planning Guide Section 4",
+                "ISO 22301:2019 Clause 8.4"
+              ]
+            },
+            {
+              "id": "RC.RP-03",
+              "description": "The integrity of backups and other restoration assets is verified before using them for restoration",
+              "implementation_examples": [
+                "Verify backup integrity through checksum validation and test restoration before using in recovery",
+                "Scan backup media for malware and indicators of compromise before restoration",
+                "Maintain offline or immutable backup copies to ensure availability of clean restoration points"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: CP-9 (System Backup), CP-10",
+                "ISO/IEC 27001:2022 A.8.13"
+              ]
+            },
+            {
+              "id": "RC.RP-04",
+              "description": "Critical mission functions and cybersecurity risk management are considered to establish post-incident operational norms",
+              "implementation_examples": [
+                "Establish enhanced monitoring and validation procedures for recovered systems",
+                "Update security controls and monitoring based on lessons learned from the incident",
+                "Define criteria for returning to normal operational status from heightened security posture"
+              ],
+              "informative_references": [
+                "NIST SP 800-61 Rev. 2 Section 3.4.2",
+                "NIST SP 800-53 Rev. 5: CP-2 (Contingency Plan)"
+              ]
+            },
+            {
+              "id": "RC.RP-05",
+              "description": "The integrity of restored assets is verified, systems and services are restored, and normal operating status is confirmed",
+              "implementation_examples": [
+                "Perform comprehensive system validation and security testing on restored assets",
+                "Conduct user acceptance testing to verify service functionality post-recovery",
+                "Obtain formal sign-off from system owners and security team before declaring recovery complete"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: CP-10 (System Recovery and Reconstitution)",
+                "ISO 22301:2019 Clause 8.4.5"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "RC.CO",
+          "name": "Incident Recovery Communication",
+          "description": "Restoration activities and progress are communicated to designated internal and external stakeholders.",
+          "subcategories": [
+            {
+              "id": "RC.CO-03",
+              "description": "Recovery activities and progress in restoring operational capabilities are communicated to designated internal and external stakeholders",
+              "implementation_examples": [
+                "Provide regular recovery status updates to executive leadership and affected business units",
+                "Communicate recovery timelines and milestones to customers and partners affected by the incident",
+                "Issue formal communications when services are fully restored and normal operations resume"
+              ],
+              "informative_references": [
+                "NIST SP 800-53 Rev. 5: CP-2(1) (Coordinate with Related Plans)",
+                "NIST SP 800-34 Rev. 1 Section 3.4"
+              ]
+            },
+            {
+              "id": "RC.CO-04",
+              "description": "Public updates on incident recovery are shared using approved methods and messaging",
+              "implementation_examples": [
+                "Coordinate public communications with legal counsel, PR team, and executive leadership",
+                "Provide accurate and timely updates through approved channels (website, email, press releases)",
+                "Maintain consistent messaging across all communication channels during recovery"
+              ],
+              "informative_references": [
+                "NIST SP 800-61 Rev. 2 Section 2.3.4",
+                "ISO/IEC 27035-2:2023 Clause 6.5"
+              ]
+            },
+            {
+              "id": "RC.CO-05",
+              "description": "Stakeholders are informed of lessons learned and risk mitigation improvements resulting from incident recovery",
+              "implementation_examples": [
+                "Conduct formal post-incident reviews and share findings with relevant stakeholders",
+                "Document lessons learned and incorporate them into updated policies, procedures, and training",
+                "Communicate planned security improvements and their implementation timelines to stakeholders"
+              ],
+              "informative_references": [
+                "NIST SP 800-61 Rev. 2 Section 3.4.2",
+                "NIST SP 800-53 Rev. 5: IR-4(11)"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tiers": [
+    {
+      "level": 1,
+      "name": "Partial",
+      "description": "Application of the organizational cybersecurity risk strategy is managed in an ad hoc manner. Prioritization is ad hoc and not formally based on objectives or threat environment. Cybersecurity risk management is performed irregularly, with limited awareness of cybersecurity risks at the organizational level. The organization implements cybersecurity risk management on an irregular, case-by-case basis. The organization may not have processes to enable cybersecurity information sharing."
+    },
+    {
+      "level": 2,
+      "name": "Risk Informed",
+      "description": "Risk management practices are approved by management but may not be established as organization-wide policy. Prioritization of cybersecurity activities and protection needs is directly informed by organizational risk objectives, the threat environment, or business requirements. There is awareness of cybersecurity risks at the organizational level, but an organization-wide approach to managing cybersecurity risks has not been established. The organization knows its role in the larger ecosystem with respect to dependencies and dependents but has not formalized its capabilities for interacting and sharing information externally."
+    },
+    {
+      "level": 3,
+      "name": "Repeatable",
+      "description": "The organization's risk management practices are formally approved and expressed as policy. Organizational cybersecurity practices are regularly updated based on the application of risk management processes to changes in business requirements, threat and technology landscape. An organization-wide approach to manage cybersecurity risks has been established using risk-informed policies, processes, and procedures, defined and implemented as intended, and reviewed. Consistent methods are in place to respond effectively to changes in risk. Personnel possess the knowledge and skills to perform their roles and responsibilities. The organization consistently and accurately monitors cybersecurity risk of organizational assets. The organization shares cybersecurity information with partners, suppliers, and other third parties."
+    },
+    {
+      "level": 4,
+      "name": "Adaptive",
+      "description": "There is an organization-wide approach to managing cybersecurity risks that uses risk-informed policies, processes, and procedures to address potential cybersecurity events. The relationship between cybersecurity risks and organizational objectives is clearly understood and considered when making decisions. Senior executives monitor cybersecurity risks in the same context as financial risk and other organizational risks. The organization adapts its cybersecurity practices based on previous and current cybersecurity activities, including lessons learned and predictive indicators. Through a process of continuous improvement incorporating advanced cybersecurity technologies and practices, the organization actively adapts to a changing cybersecurity landscape and responds in a timely and effective manner to evolving, sophisticated threats."
+    }
+  ]
+}
