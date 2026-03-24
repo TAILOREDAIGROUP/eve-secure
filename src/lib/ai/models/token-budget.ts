@@ -2,6 +2,18 @@ import { logger } from "@/lib/logger";
 import { z } from "zod";
 
 /**
+ * Structured anchors that survive all compression levels.
+ * These are the facts that downstream sections MUST be able to reference.
+ */
+export interface SectionAnchors {
+  sectionName: string;
+  score: number | null; // e.g. 3/5 maturity rating
+  keyFindings: string[]; // max 5 — the "what we found"
+  constraints: string[]; // user-stated: budget, timeline, staff count, tech stack
+  recommendations: string[]; // max 5 — the "what to do"
+}
+
+/**
  * Section summary for token compression
  */
 interface SectionSummary {
@@ -9,6 +21,7 @@ interface SectionSummary {
   originalTokens: number;
   summaryTokens: number;
   summary: string;
+  anchors: SectionAnchors;
   timestamp: Date;
 }
 
@@ -49,6 +62,7 @@ const CONFIG = {
   summaryRatio: 0.25, // Compress to 25% of original
   minKnowledgeAllocation: 4000, // Always reserve this for knowledge
   bufferTokens: 1000, // Safety buffer for output
+  maxAnchorsPerField: 5, // Cap anchors arrays
 };
 
 /**
@@ -59,14 +73,138 @@ function estimateTokens(text: string): number {
 }
 
 /**
- * Summarize a Q&A section using extractive summarization
- * Compresses conversation history while retaining key points
+ * Extract structured anchors from Q&A pairs.
+ * Anchors capture the durable facts — scores, findings, constraints, recommendations —
+ * that downstream sections need to reference.
+ */
+export function extractAnchors(
+  questions: Array<{ query: string; response: string }>,
+  sectionName?: string
+): SectionAnchors {
+  const findings: string[] = [];
+  const constraints: string[] = [];
+  const recommendations: string[] = [];
+  let score: number | null = null;
+
+  for (const qa of questions) {
+    const text = `${qa.query}\n${qa.response}`;
+
+    // Extract score/maturity rating
+    if (score === null) {
+      const scoreMatch = text.match(
+        /(?:score|rating|maturity|level)[\s:]*(\d(?:\.\d)?)\s*(?:\/\s*5|out of 5)/i
+      );
+      if (scoreMatch) {
+        score = parseFloat(scoreMatch[1]!);
+      }
+    }
+
+    // Extract constraints (user-stated limitations)
+    const constraintPatterns = [
+      /(?:budget|funding)[\s:]*(?:is|of|around|approximately|about)?\s*\$?[\d,]+[kKmM]?/gi,
+      /(?:timeline|deadline|by|before|within)\s+(?:is\s+)?(?:Q[1-4]\s*\d{4}|\d+\s*(?:month|week|day|year)s?|end of \w+)/gi,
+      /(?:staff|team|headcount|personnel|employees?)[\s:]*(?:is|of|only|just)?\s*\d+/gi,
+      /(?:we (?:don't|cannot|can't|do not) have|no|lack(?:ing)?|without)\s+[^.]{5,60}/gi,
+      /(?:compliance|regulatory|must comply|required by)\s+[^.]{5,60}/gi,
+    ];
+
+    for (const pattern of constraintPatterns) {
+      const matches = text.match(pattern);
+      if (matches) {
+        for (const m of matches.slice(0, 2)) {
+          const trimmed = m.trim().substring(0, 120);
+          if (!constraints.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
+            constraints.push(trimmed);
+          }
+        }
+      }
+    }
+
+    // Extract recommendations from responses
+    const recPatterns = [
+      /(?:recommend|should|advise|suggest|priority|action item)[\s:]+[^.]{10,120}\./gi,
+      /(?:\d+\.\s+\*\*[^*]+\*\*)[^.]*\./g, // Numbered bold items (markdown lists)
+    ];
+
+    for (const pattern of recPatterns) {
+      const matches = qa.response.match(pattern);
+      if (matches) {
+        for (const m of matches.slice(0, 2)) {
+          const trimmed = m.trim().substring(0, 150);
+          if (!recommendations.some((r) => r.toLowerCase() === trimmed.toLowerCase())) {
+            recommendations.push(trimmed);
+          }
+        }
+      }
+    }
+
+    // Extract key findings from responses
+    const findingPatterns = [
+      /(?:found|detected|identified|observed|noted|gap|weakness|strength|risk)[\s:]+[^.]{10,120}\./gi,
+      /(?:Confidence:\s*(?:HIGH|MEDIUM|LOW))\s*[-–—]\s*[^.]{10,120}\./gi,
+    ];
+
+    for (const pattern of findingPatterns) {
+      const matches = qa.response.match(pattern);
+      if (matches) {
+        for (const m of matches.slice(0, 2)) {
+          const trimmed = m.trim().substring(0, 150);
+          if (!findings.some((f) => f.toLowerCase() === trimmed.toLowerCase())) {
+            findings.push(trimmed);
+          }
+        }
+      }
+    }
+  }
+
+  return {
+    sectionName: sectionName || `Section ${Date.now()}`,
+    score,
+    keyFindings: findings.slice(0, CONFIG.maxAnchorsPerField),
+    constraints: constraints.slice(0, CONFIG.maxAnchorsPerField),
+    recommendations: recommendations.slice(0, CONFIG.maxAnchorsPerField),
+  };
+}
+
+/**
+ * Serialize anchors into a compact, readable string
+ */
+function serializeAnchors(anchors: SectionAnchors): string {
+  const lines: string[] = [`[Section: ${anchors.sectionName}]`];
+
+  if (anchors.score !== null) {
+    lines.push(`[Score: ${anchors.score}/5]`);
+  }
+
+  if (anchors.keyFindings.length > 0) {
+    lines.push(`[Findings: ${anchors.keyFindings.join("; ")}]`);
+  }
+
+  if (anchors.constraints.length > 0) {
+    lines.push(`[Constraints: ${anchors.constraints.join("; ")}]`);
+  }
+
+  if (anchors.recommendations.length > 0) {
+    lines.push(`[Recommendations: ${anchors.recommendations.join("; ")}]`);
+  }
+
+  return lines.join(" ");
+}
+
+/**
+ * Summarize a Q&A section using anchored iterative summarization.
+ *
+ * Compression cascade:
+ *   Level 0: Full text (no compression)
+ *   Level 1: Anchors + narrative summary (default)
+ *   Level 2: Anchors only (narrative dropped, anchors NEVER dropped)
  */
 export function summarizeSection(section: {
   questions: Array<{ query: string; response: string }>;
+  sectionName?: string;
   maxTokens?: number;
 }): SectionSummary {
-  const { questions, maxTokens = CONFIG.summaryRatio } = section;
+  const { questions, sectionName } = section;
 
   if (questions.length === 0) {
     return {
@@ -74,51 +212,81 @@ export function summarizeSection(section: {
       originalTokens: 0,
       summaryTokens: 0,
       summary: "",
+      anchors: {
+        sectionName: sectionName || "Empty",
+        score: null,
+        keyFindings: [],
+        constraints: [],
+        recommendations: [],
+      },
       timestamp: new Date(),
     };
   }
 
   try {
-    // Extract key insights from each Q&A
-    const summaryPoints: string[] = [];
+    // Step 1: Extract structured anchors (these survive all compression levels)
+    const anchors = extractAnchors(questions, sectionName);
+
+    // Step 2: Build narrative summary from key points
+    const narrativePoints: string[] = [];
 
     for (const qa of questions) {
-      // Extract assertions and findings
-      const responseLines = qa.response
-        .split("\n")
-        .filter((line) => line.length > 30)
-        .slice(0, 2); // First 2 substantial lines
-
-      // Extract key phrases
-      const keyPhrases = qa.response.match(
-        /\b(?:key|important|critical|significant|must|should|recommend)\b[^.]*\./gi
-      );
-
-      if (keyPhrases && keyPhrases.length > 0) {
-        summaryPoints.push(
-          ...keyPhrases.slice(0, 2).map((p) => p.trim())
+      // Extract sentences with substantive content
+      const sentences = qa.response
+        .split(/[.!?]\s+/)
+        .filter((s) => s.length > 30 && s.length < 200)
+        .filter(
+          (s) =>
+            !s.match(/^(I |Let me |Here |This |That |As |In |The following)/i)
         );
-      } else if (responseLines.length > 0) {
-        summaryPoints.push(`Q: ${qa.query.substring(0, 60)}`);
-        summaryPoints.push(`A: ${responseLines[0]!.substring(0, 80)}`);
-      }
+
+      // Take up to 2 most substantive sentences per Q&A
+      const substantive = sentences
+        .sort((a, b) => {
+          // Prefer sentences with specific details (numbers, frameworks, actions)
+          const scoreA =
+            (a.match(/\d/g)?.length || 0) +
+            (a.match(
+              /\b(?:NIST|HIPAA|SOC|PCI|ISO|GDPR|CMMI|CIS|FedRAMP)\b/gi
+            )?.length || 0) * 2;
+          const scoreB =
+            (b.match(/\d/g)?.length || 0) +
+            (b.match(
+              /\b(?:NIST|HIPAA|SOC|PCI|ISO|GDPR|CMMI|CIS|FedRAMP)\b/gi
+            )?.length || 0) * 2;
+          return scoreB - scoreA;
+        })
+        .slice(0, 2);
+
+      narrativePoints.push(...substantive);
     }
 
-    // Build summary
+    // Step 3: Build Level 1 summary (anchors + narrative)
+    const anchorString = serializeAnchors(anchors);
+    const narrative = narrativePoints.slice(0, 4).join(". ");
+    const summary = narrative
+      ? `${anchorString}\n${narrative}`
+      : anchorString;
+
     const originalTokens = questions.reduce(
       (sum, qa) =>
         sum + estimateTokens(qa.query) + estimateTokens(qa.response),
       0
     );
 
-    const summary = summaryPoints.slice(0, 5).join("\n");
     const summaryTokens = estimateTokens(summary);
 
-    logger.debug("Summarized section", {
+    logger.debug("Summarized section with anchors", {
+      sectionName: anchors.sectionName,
       originalTokens,
       summaryTokens,
-      ratio: (summaryTokens / originalTokens).toFixed(2),
-      pointsExtracted: summaryPoints.length,
+      ratio: (summaryTokens / Math.max(originalTokens, 1)).toFixed(2),
+      anchorFields: {
+        score: anchors.score,
+        findings: anchors.keyFindings.length,
+        constraints: anchors.constraints.length,
+        recommendations: anchors.recommendations.length,
+      },
     });
 
     return {
@@ -126,6 +294,7 @@ export function summarizeSection(section: {
       originalTokens,
       summaryTokens,
       summary,
+      anchors,
       timestamp: new Date(),
     };
   } catch (error) {
@@ -134,7 +303,10 @@ export function summarizeSection(section: {
       questionCount: questions.length,
     });
 
-    // Return empty summary on failure
+    // Fallback: still extract anchors even on error
+    const anchors = extractAnchors(questions, sectionName);
+    const fallbackSummary = serializeAnchors(anchors);
+
     return {
       sectionId: `section-${Date.now()}`,
       originalTokens: questions.reduce(
@@ -142,11 +314,27 @@ export function summarizeSection(section: {
           sum + estimateTokens(qa.query) + estimateTokens(qa.response),
         0
       ),
-      summaryTokens: 0,
-      summary: `[${questions.length} Q&A pairs summarized]`,
+      summaryTokens: estimateTokens(fallbackSummary),
+      summary: fallbackSummary,
+      anchors,
       timestamp: new Date(),
     };
   }
+}
+
+/**
+ * Further compress a section summary to Level 2: anchors only.
+ * Drops narrative but NEVER drops structured anchors.
+ */
+function compressToAnchorsOnly(section: SectionSummary): SectionSummary {
+  const anchorString = serializeAnchors(section.anchors);
+  const summaryTokens = estimateTokens(anchorString);
+
+  return {
+    ...section,
+    summary: anchorString,
+    summaryTokens,
+  };
 }
 
 /**
@@ -311,11 +499,11 @@ export function manageTokenBudget(args: {
         };
 
         actions.push(
-          `Compressed current section: ${currentWindow.currentSection.tokens} → ${compressed.summaryTokens} tokens`
+          `Compressed current section: ${currentWindow.currentSection.tokens} → ${compressed.summaryTokens} tokens (anchors preserved: ${compressed.anchors.keyFindings.length} findings, ${compressed.anchors.constraints.length} constraints, ${compressed.anchors.recommendations.length} recommendations)`
         );
       }
 
-      // Strategy 2: If still over budget, compress oldest prior sections
+      // Strategy 2: Further compress oldest prior sections (Level 2: anchors only)
       let tokenBudget = managedWindow.currentTokens;
       let sectionIndex = 0;
 
@@ -326,27 +514,18 @@ export function manageTokenBudget(args: {
       ) {
         const section = managedWindow.priorSections[sectionIndex]!;
 
-        // Further compress by extracting key sentences
-        const furtherCompressed = section.summary
-          .split("\n")
-          .slice(0, 2) // Keep only first 2 lines
-          .join(" ");
+        // Compress to anchors only — narrative is dropped, anchors survive
+        const furtherCompressed = compressToAnchorsOnly(section);
+        const saved = section.summaryTokens - furtherCompressed.summaryTokens;
 
-        const compressedTokens = estimateTokens(furtherCompressed);
-        const saved = section.summaryTokens - compressedTokens;
+        if (saved > 0) {
+          managedWindow.priorSections[sectionIndex] = furtherCompressed;
+          tokenBudget -= saved;
+          actions.push(
+            `Compressed section "${section.anchors.sectionName}" to anchors-only: -${saved} tokens (anchors preserved)`
+          );
+        }
 
-        managedWindow.priorSections[sectionIndex] = {
-          sectionId: section.sectionId,
-          originalTokens: section.originalTokens,
-          timestamp: section.timestamp,
-          summary: furtherCompressed,
-          summaryTokens: compressedTokens,
-        };
-
-        tokenBudget -= saved;
-        actions.push(
-          `Further compressed section ${sectionIndex}: -${saved} tokens`
-        );
         sectionIndex++;
       }
 

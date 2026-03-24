@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/typescript-node:20
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
+    networks:
+      - eve-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://eve_secure_user:eve_secure_password_dev@postgres:5432/eve_secure
+      REDIS_URL: redis://:eve_secure_redis_password_dev@redis:6379
+      LOCALSTACK_ENDPOINT: http://localstack:4566
+      NODE_ENV: development

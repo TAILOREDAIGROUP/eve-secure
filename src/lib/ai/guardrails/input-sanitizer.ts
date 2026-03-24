@@ -1,5 +1,6 @@
 import { logger } from "@/lib/logger";
 import { z } from "zod";
+import { getCompiledInjectionPatterns } from "./policy-loader";
 
 /**
  * Input sanitization and validation results
@@ -87,90 +88,33 @@ const PII_PATTERNS = {
 };
 
 /**
- * Prompt injection attack patterns
- * Based on academic research and adversarial testing
- * ~200+ patterns covering common injection vectors
+ * Get injection patterns from externalized policy files.
+ * Falls back to hardcoded patterns if policy loading fails.
  */
-const INJECTION_PATTERNS = [
-  // Direct instruction overrides
+function getInjectionPatterns(): RegExp[] {
+  try {
+    const compiled = getCompiledInjectionPatterns();
+    return compiled.allPatterns;
+  } catch (error) {
+    logger.warn("Failed to load injection policies, using hardcoded fallback", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return FALLBACK_INJECTION_PATTERNS;
+  }
+}
+
+/**
+ * Fallback injection patterns (used only if policy files are unavailable).
+ * The canonical source is guardrails/policies/injection-patterns.yaml.
+ */
+const FALLBACK_INJECTION_PATTERNS = [
   /(?:ignore|forget|disregard|override|bypass|disable|suppress).{0,20}(?:instruction|prompt|system|previous|above|rule|constraint|guardrail)/gi,
   /(?:you are|you will now|from now on|act as).{0,30}(?:unfiltered|unrestricted|jailbroken|evil|malicious|helpful|unethical)/gi,
-
-  // Prompt revelation attempts
   /(?:show|reveal|display|print|output|tell me).{0,20}(?:your prompt|system prompt|instructions|constraints|rules|guidelines)/gi,
-  /what.*(?:are your|is your|were you).{0,20}(?:constraints|rules|guidelines|instructions)/gi,
-
-  // Authority/permission claims
   /\b(?:admin|developer|system administrator|root).{0,20}(?:override|authorization|password|credentials)\b/gi,
-  /(?:i am|claiming to be|authorized as).{0,20}(?:admin|developer|founder|owner)\b/gi,
-
-  // Payload injection vectors
-  /\[instruction.*?\]/gi,
-  /\{instruction:.*?\}/gi,
-  /{.*?"instruction".*?}/gi,
-
-  // Hidden content/encoding
-  /(?:hidden message|secret instruction|encoded|base64|hex|rot13)[\s:]*(.{10,})/gi,
-  /<!--.*?-->/g, // HTML comments
-  /\/\*.*?\*\//gs, // C-style comments
-
-  // False urgency/emergency language
   /(?:urgent|emergency|critical|immediately|now|asap).{0,30}(?:override|disable|bypass|ignore).{0,30}(?:safety|filter|rule|constraint)/gi,
-
-  // Goal/objective manipulation
-  /(?:your goal|new objective|primary task|purpose is).{0,50}(?:to help|to provide|to show|to explain).{0,20}(?:without|regardless of|ignoring).{0,20}(?:safety|filter|rule|constraint)/gi,
-
-  // Context switching
-  /(?:in this scenario|in this simulation|imagine|hypothetically|suppose).{0,50}(?:you had no|you didn't have|you could ignore).{0,20}(?:safety|filter|rule|constraint)/gi,
-
-  // Role-play injection
   /(?:roleplay|role play|act|pretend|simulate).{0,20}(?:without|ignoring|bypassing).{0,20}(?:safety|filter|rule|constraint|guideline)/gi,
-
-  // Compliance claim injection
-  /(?:complies with|permitted by|allowed by|authorized under|legal under).{0,50}(?:guidelines|policy|law|regulation)/gi,
-
-  // Nested instruction attempts
-  /(?:also|additionally|furthermore).{0,50}(?:ignore|forget|override|bypass).{0,20}(?:rule|instruction|constraint)/gi,
-
-  // Multi-turn injection
-  /(?:next question|next prompt|following instruction).{0,50}(?:override|supersede|cancel|ignore).{0,20}(?:previous|earlier).{0,20}(?:rule|instruction)/gi,
-
-  // Obfuscated command
-  /(?:the word|the phrase|the following).{0,30}(?:means.*override|equals.*ignore)/gi,
-
-  // File/code injection
-  /(?:execute|run|eval|compile|interpret)[\s:]*```|```[\s\S]*?```/g,
-
-  // SQL/command injection markers
-  /(?:sql|select|union|insert|delete|update|drop|exec|execute)[\s\(].*?(?:where|from|order by|limit)/gi,
-
-  // System command sequences
-  /(?:bash|sh|cmd|powershell|terminal|console)[\s:]*./gi,
-
-  // Variable escape attempts
-  /\$\{.*?[a-zA-Z_]/g,
-  /\$\(.*?\)/g,
-
-  // Format string attacks
-  /%[a-z].*?(?:%[x|d|s])/gi,
-
-  // XML/HTML injection
-  /(?:<!|<?xml|<script|<iframe|<embed|<object)/gi,
-
-  // Template injection
-  /{{[\s\S]*?}}/g,
-  /\[\[[\s\S]*?\]\]/g,
-
-  // Alternative encoding
-  /(?:\\x[0-9a-f]{2}|\\u[0-9a-f]{4}|&#\d+;|&#x[0-9a-f]+;)/gi,
-
-  // Null byte injection
-  /\x00/g,
-
-  // LDAP injection
-  /\*|\(|\)|\||&/g, // When used with filter syntax
-
-  // JWT/token manipulation
+  /(?:<!|<\?xml|<script|<iframe|<embed|<object)/gi,
   /(?:token|jwt|bearer|authorization).{0,50}(?:fake|forged|spoofed|bypass|override)/gi,
 ];
 
@@ -215,7 +159,9 @@ export function detectInjection(input: string): {
   const matchedPatterns: Map<string, number> = new Map();
   const detailedMatches: Array<{ pattern: string; matches: number }> = [];
 
-  for (const pattern of INJECTION_PATTERNS) {
+  const injectionPatterns = getInjectionPatterns();
+
+  for (const pattern of injectionPatterns) {
     const matches = input.match(pattern);
     if (matches && matches.length > 0) {
       const patternStr = pattern.source.substring(0, 50);

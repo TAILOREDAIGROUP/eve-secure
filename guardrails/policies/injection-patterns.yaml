@@ -1,0 +1,189 @@
+# EVE Secure — Prompt Injection Detection Patterns
+# Version: 1.0.0
+# Last Updated: 2026-03-24
+#
+# These patterns detect prompt injection attacks in user input.
+# Based on academic research and adversarial testing (~200+ vectors).
+#
+# Format: Each category contains regex patterns (JavaScript-compatible).
+# Flags are specified per-pattern. Default: gi (global, case-insensitive).
+#
+# To update: edit this file and restart the application (dev) or redeploy (prod).
+# All changes are version-controlled in Git alongside the knowledge base.
+
+categories:
+  direct_instruction_overrides:
+    description: "Attempts to override, ignore, or bypass system instructions"
+    severity: high
+    patterns:
+      - pattern: '(?:ignore|forget|disregard|override|bypass|disable|suppress).{0,20}(?:instruction|prompt|system|previous|above|rule|constraint|guardrail)'
+        flags: gi
+      - pattern: '(?:you are|you will now|from now on|act as).{0,30}(?:unfiltered|unrestricted|jailbroken|evil|malicious|helpful|unethical)'
+        flags: gi
+
+  prompt_revelation:
+    description: "Attempts to reveal system prompts or internal instructions"
+    severity: high
+    patterns:
+      - pattern: '(?:show|reveal|display|print|output|tell me).{0,20}(?:your prompt|system prompt|instructions|constraints|rules|guidelines)'
+        flags: gi
+      - pattern: 'what.*(?:are your|is your|were you).{0,20}(?:constraints|rules|guidelines|instructions)'
+        flags: gi
+
+  authority_claims:
+    description: "False claims of admin or developer authority"
+    severity: high
+    patterns:
+      - pattern: '\b(?:admin|developer|system administrator|root).{0,20}(?:override|authorization|password|credentials)\b'
+        flags: gi
+      - pattern: '(?:i am|claiming to be|authorized as).{0,20}(?:admin|developer|founder|owner)\b'
+        flags: gi
+
+  payload_injection:
+    description: "Structured payload injection via JSON, brackets, etc."
+    severity: high
+    patterns:
+      - pattern: '\[instruction.*?\]'
+        flags: gi
+      - pattern: '\{instruction:.*?\}'
+        flags: gi
+      - pattern: '\{.*?"instruction".*?\}'
+        flags: gi
+
+  hidden_content:
+    description: "Hidden content via encoding, comments, or obfuscation"
+    severity: medium
+    patterns:
+      - pattern: '(?:hidden message|secret instruction|encoded|base64|hex|rot13)[\s:]*(.{10,})'
+        flags: gi
+      - pattern: '<!--.*?-->'
+        flags: g
+      - pattern: '/\*.*?\*/'
+        flags: gs
+
+  false_urgency:
+    description: "False urgency/emergency to bypass safety"
+    severity: high
+    patterns:
+      - pattern: '(?:urgent|emergency|critical|immediately|now|asap).{0,30}(?:override|disable|bypass|ignore).{0,30}(?:safety|filter|rule|constraint)'
+        flags: gi
+
+  goal_manipulation:
+    description: "Attempts to redefine the AI's goal or objective"
+    severity: high
+    patterns:
+      - pattern: '(?:your goal|new objective|primary task|purpose is).{0,50}(?:to help|to provide|to show|to explain).{0,20}(?:without|regardless of|ignoring).{0,20}(?:safety|filter|rule|constraint)'
+        flags: gi
+
+  context_switching:
+    description: "Hypothetical scenarios to bypass constraints"
+    severity: medium
+    patterns:
+      - pattern: '(?:in this scenario|in this simulation|imagine|hypothetically|suppose).{0,50}(?:you had no|you didn''t have|you could ignore).{0,20}(?:safety|filter|rule|constraint)'
+        flags: gi
+
+  roleplay_injection:
+    description: "Role-play attempts to bypass guardrails"
+    severity: high
+    patterns:
+      - pattern: '(?:roleplay|role play|act|pretend|simulate).{0,20}(?:without|ignoring|bypassing).{0,20}(?:safety|filter|rule|constraint|guideline)'
+        flags: gi
+
+  compliance_claim:
+    description: "False claims that injection is permitted by policy"
+    severity: medium
+    patterns:
+      - pattern: '(?:complies with|permitted by|allowed by|authorized under|legal under).{0,50}(?:guidelines|policy|law|regulation)'
+        flags: gi
+
+  nested_instructions:
+    description: "Multi-step injection via nested instructions"
+    severity: medium
+    patterns:
+      - pattern: '(?:also|additionally|furthermore).{0,50}(?:ignore|forget|override|bypass).{0,20}(?:rule|instruction|constraint)'
+        flags: gi
+
+  multi_turn:
+    description: "Multi-turn injection via follow-up instructions"
+    severity: medium
+    patterns:
+      - pattern: '(?:next question|next prompt|following instruction).{0,50}(?:override|supersede|cancel|ignore).{0,20}(?:previous|earlier).{0,20}(?:rule|instruction)'
+        flags: gi
+
+  obfuscated_commands:
+    description: "Obfuscated commands via word redefinition"
+    severity: medium
+    patterns:
+      - pattern: '(?:the word|the phrase|the following).{0,30}(?:means.*override|equals.*ignore)'
+        flags: gi
+
+  code_injection:
+    description: "File/code execution injection"
+    severity: high
+    patterns:
+      - pattern: '(?:execute|run|eval|compile|interpret)[\s:]*```|```[\s\S]*?```'
+        flags: g
+
+  sql_command_injection:
+    description: "SQL and system command injection markers"
+    severity: high
+    patterns:
+      - pattern: '(?:sql|select|union|insert|delete|update|drop|exec|execute)[\s\(].*?(?:where|from|order by|limit)'
+        flags: gi
+      - pattern: '(?:bash|sh|cmd|powershell|terminal|console)[\s:]*.'
+        flags: gi
+
+  variable_escape:
+    description: "Variable escape and interpolation attacks"
+    severity: medium
+    patterns:
+      - pattern: '\$\{.*?[a-zA-Z_]'
+        flags: g
+      - pattern: '\$\(.*?\)'
+        flags: g
+
+  format_string:
+    description: "Format string attacks"
+    severity: medium
+    patterns:
+      - pattern: '%[a-z].*?(?:%[x|d|s])'
+        flags: gi
+
+  markup_injection:
+    description: "XML, HTML, script, and template injection"
+    severity: high
+    patterns:
+      - pattern: '(?:<!|<\?xml|<script|<iframe|<embed|<object)'
+        flags: gi
+      - pattern: '\{\{[\s\S]*?\}\}'
+        flags: g
+      - pattern: '\[\[[\s\S]*?\]\]'
+        flags: g
+
+  encoding_attacks:
+    description: "Alternative encoding (hex, unicode, HTML entities)"
+    severity: medium
+    patterns:
+      - pattern: '(?:\\x[0-9a-f]{2}|\\u[0-9a-f]{4}|&#\d+;|&#x[0-9a-f]+;)'
+        flags: gi
+
+  null_byte:
+    description: "Null byte injection"
+    severity: high
+    patterns:
+      - pattern: '\x00'
+        flags: g
+
+  ldap_injection:
+    description: "LDAP filter injection characters"
+    severity: low
+    patterns:
+      - pattern: '\*|\(|\)|\||&'
+        flags: g
+
+  token_manipulation:
+    description: "JWT/token forgery and bypass attempts"
+    severity: high
+    patterns:
+      - pattern: '(?:token|jwt|bearer|authorization).{0,50}(?:fake|forged|spoofed|bypass|override)'
+        flags: gi

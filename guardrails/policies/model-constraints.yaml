@@ -1,0 +1,59 @@
+# EVE Secure — Model Constraints
+# Version: 1.0.0
+# Last Updated: 2026-03-24
+#
+# Defines which models are used for which tasks, token limits, and cost caps.
+# Referenced by the AI gateway (LiteLLM proxy) and token budget manager.
+
+models:
+  haiku:
+    id: "claude-3-haiku-20240307"
+    max_tokens_per_turn: 1000
+    use_cases:
+      - "classification"
+      - "routing"
+      - "simple Q&A"
+      - "input sanitization pre-check"
+    cost_per_1k_input: 0.00025
+    cost_per_1k_output: 0.00125
+
+  sonnet:
+    id: "claude-sonnet-4-20250514"
+    max_tokens_per_turn: 3000
+    use_cases:
+      - "assessment Q&A"
+      - "standard advisory"
+      - "report generation"
+      - "sector translation"
+    cost_per_1k_input: 0.003
+    cost_per_1k_output: 0.015
+
+  opus:
+    id: "claude-opus-4-20250514"
+    max_tokens_per_turn: 5000
+    use_cases:
+      - "complex risk analysis"
+      - "incident response"
+      - "executive briefings"
+      - "multi-framework synthesis"
+    cost_per_1k_input: 0.015
+    cost_per_1k_output: 0.075
+
+context_window:
+  max_context_tokens: 32000
+  max_section_size: 8000
+  summary_ratio: 0.25
+  min_knowledge_allocation: 4000
+  buffer_tokens: 1000
+
+cost_controls:
+  monthly_budget_per_tenant_usd: 50.00
+  daily_budget_per_tenant_usd: 5.00
+  max_turns_per_session: 60
+  cost_alert_threshold_pct: 80
+  hard_stop_threshold_pct: 100
+
+rate_limits:
+  requests_per_minute_per_tenant: 20
+  requests_per_hour_per_tenant: 200
+  concurrent_sessions_per_tenant: 3

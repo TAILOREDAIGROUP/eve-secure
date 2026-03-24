@@ -1,0 +1,97 @@
+# EVE Secure — Output Validation Rules
+# Version: 1.0.0
+# Last Updated: 2026-03-24
+#
+# Rules for validating AI output before delivery to users.
+# Covers harmful content detection, PII scanning, citation validation, and token limits.
+
+token_limits:
+  max_tokens: 4096
+  min_tokens_for_full: 50
+  max_tokens_warn: 5000
+
+checks:
+  citation_check_enabled: true
+  pii_scan_enabled: true
+  harmful_content_check_enabled: true
+  cross_tenant_pii_scan_enabled: true
+
+harmful_content:
+  exploit_code:
+    severity: critical
+    description: "Exploit code, proof-of-concept, shellcode, reverse shells"
+    patterns:
+      - pattern: '(?:exploit code|poc|proof of concept)[\s:]*```|```[\s\S]*?(?:bash|shell|python|javascript|powershell)'
+        flags: gi
+      - pattern: '\b(?:shellcode|payload|reverse shell|one-liner|one liner)\b[\s:]*\w+'
+        flags: gi
+      - pattern: '\b(?:curl|wget|nc|netcat|bash)\b.{0,20}(?:pipe|&&|\||sh|bash)'
+        flags: gi
+
+  attack_methodology:
+    severity: critical
+    description: "Step-by-step attack guides, tutorials, walkthroughs"
+    patterns:
+      - pattern: '(?:step|steps|how to|guide|tutorial)[\s:]*(?:hack|exploit|bypass|crack|break|attack)'
+        flags: gi
+      - pattern: '\b(?:brute force|dictionary attack|sql injection|xss|cross-site|privilege escalation|lateral movement)\b[\s:]*(?:using|with|via|through)'
+        flags: gi
+      - pattern: '\b(?:vulnerability|vuln|cve-?\d{4}-\d{4})[\s:]*(?:step|guide|walkthrough|tutorial)'
+        flags: gi
+
+  attack_scripts:
+    severity: critical
+    description: "Executable attack scripts in code blocks"
+    patterns:
+      - pattern: '```(?:bash|sh|shell|powershell|cmd|python|javascript)\s*\n[\s\S]*?(?:for\s+(?:i|line)|while|exec|subprocess|system|os\.command)'
+        flags: g
+      - pattern: '\$\(.*?(?:curl|wget|cat|bash)\b.*?\)'
+        flags: g
+      - pattern: '\|\s*(?:bash|sh|powershell|cmd)\s*[\)\$]'
+        flags: g
+
+  exploit_disclosure:
+    severity: high
+    description: "Zero-day, unpatched vulnerability, and malware disclosure"
+    patterns:
+      - pattern: '\b(?:0day|zero-day|n-day|unpatched|undetected)\b[\s:]*(?:vulnerability|exploit|attack|malware)'
+        flags: gi
+      - pattern: '\b(?:ransomware|malware|worm|virus|trojan)[\s:]*(?:code|source|sample|implementation)'
+        flags: gi
+
+output_pii:
+  description: "PII patterns to detect in AI output (prevent data leakage)"
+  patterns:
+    ssn:
+      pattern: '\b(?:\d{3}-\d{2}-\d{4}|XXX-\d{2}-\d{4})\b'
+      flags: g
+    credit_card:
+      pattern: '\b(?:\d{4}[-\s]?){3}\d{4}(?:[-\s]?\d{1,4})?\b'
+      flags: g
+    api_key:
+      pattern: '\b(?:api[_-]?key|secret|token|password)[\s:]*[a-zA-Z0-9]{20,}'
+      flags: gi
+    private_key:
+      pattern: '-----BEGIN (?:RSA|DSA|EC|OPENSSH|PRIVATE) KEY-----'
+      flags: gi
+    password:
+      pattern: '\b(?:password|passwd|pwd)[\s:]*[^\s]{8,}\b'
+      flags: gi
+    email:
+      pattern: '\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b'
+      flags: g
+
+citation_validation:
+  description: "Regex for extracting regulatory citations from output"
+  extraction_pattern: '(?:§\s*\d+[\.\-]\d+|CFR\s*§?\s*\d+[\.\-]\d+|\b(?:HIPAA|GDPR|SOC\s*2|ISO\s*27001|PCI-DSS|CIS|NIST|FedRAMP)\b|\b(?:Rule|Standard|Control)\s*[A-Z0-9\-]+)'
+  extraction_flags: gi
+
+scoring:
+  description: "Score deductions for validation issues"
+  short_output: -5
+  long_output: -10
+  unverified_citations: -15
+  harmful_critical: -50
+  harmful_high: -30
+  pii_detected: -25
+  cross_tenant_leak: -50

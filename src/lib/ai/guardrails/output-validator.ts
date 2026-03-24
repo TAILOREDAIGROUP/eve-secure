@@ -1,6 +1,7 @@
 import { logger } from "@/lib/logger";
 import { getSupabaseAdmin } from "@/lib/db";
 import { z } from "zod";
+import { getCompiledOutputPatterns, loadOutputRules } from "./policy-loader";
 
 /**
  * Output validation result
@@ -49,54 +50,91 @@ interface PIIScanResult {
 }
 
 /**
- * Harmful content patterns
- * Prevent responses containing exploit code, attack scripts, etc.
+ * Get harmful content patterns from externalized policy files.
+ * Falls back to hardcoded patterns if policy loading fails.
  */
-const HARMFUL_PATTERNS = {
-  exploitCode: {
-    patterns: [
-      /(?:exploit code|poc|proof of concept)[\s:]*```|```[\s\S]*?(?:bash|shell|python|javascript|powershell)/gi,
-      /\b(?:shellcode|payload|reverse shell|one-liner|one liner)\b[\s:]*\w+/gi,
-      /\b(?:curl|wget|nc|netcat|bash)\b.{0,20}(?:pipe|&&|\||sh|bash)/gi,
-    ],
-    severity: "critical" as const,
-  },
-  attackMethodology: {
-    patterns: [
-      /(?:step|steps|how to|guide|tutorial)[\s:]*(?:hack|exploit|bypass|crack|break|attack)/gi,
-      /\b(?:brute force|dictionary attack|sql injection|xss|cross-site|privilege escalation|lateral movement)\b[\s:]*(?:using|with|via|through)/gi,
-      /\b(?:vulnerability|vuln|cve-?\d{4}-\d{4})[\s:]*(?:step|guide|walkthrough|tutorial)/gi,
-    ],
-    severity: "critical" as const,
-  },
-  attackScripts: {
-    patterns: [
-      /```(?:bash|sh|shell|powershell|cmd|python|javascript)\s*\n[\s\S]*?(?:for\s+(?:i|line)|while|exec|subprocess|system|os\.command)/g,
-      /\$\(.*?(?:curl|wget|cat|bash)\b.*?\)/g,
-      /\|\s*(?:bash|sh|powershell|cmd)\s*[\)\$]/g,
-    ],
-    severity: "critical" as const,
-  },
-  exploitDisclosure: {
-    patterns: [
-      /\b(?:0day|zero-day|n-day|unpatched|undetected)\b[\s:]*(?:vulnerability|exploit|attack|malware)/gi,
-      /\b(?:ransomware|malware|worm|virus|trojan)[\s:]*(?:code|source|sample|implementation)/gi,
-    ],
-    severity: "high" as const,
-  },
-};
+function getHarmfulPatterns(): Map<
+  string,
+  { severity: "critical" | "high" | "medium" | "low"; patterns: RegExp[] }
+> {
+  try {
+    const compiled = getCompiledOutputPatterns();
+    return compiled.harmfulPatterns;
+  } catch (error) {
+    logger.warn("Failed to load output policies, using hardcoded fallback", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return FALLBACK_HARMFUL_PATTERNS;
+  }
+}
 
 /**
- * PII patterns for output scanning
+ * Get PII patterns for output scanning from policy files.
  */
-const OUTPUT_PII_PATTERNS = {
-  ssn: /\b(?:\d{3}-\d{2}-\d{4}|XXX-\d{2}-\d{4})\b/g,
-  creditCard: /\b(?:\d{4}[-\s]?){3}\d{4}(?:[-\s]?\d{1,4})?\b/g,
-  apiKey: /\b(?:api[_-]?key|secret|token|password)[\s:]*[a-zA-Z0-9]{20,}/gi,
-  privateKey: /-----BEGIN (?:RSA|DSA|EC|OPENSSH|PRIVATE) KEY-----/gi,
-  password: /\b(?:password|passwd|pwd)[\s:]*[^\s]{8,}\b/gi,
-  email: /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g,
-};
+function getOutputPIIPatterns(): Map<string, RegExp> {
+  try {
+    const compiled = getCompiledOutputPatterns();
+    return compiled.piiPatterns;
+  } catch (error) {
+    logger.warn("Failed to load output PII policies, using hardcoded fallback", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return FALLBACK_OUTPUT_PII_PATTERNS;
+  }
+}
+
+/**
+ * Fallback harmful content patterns (used only if policy files are unavailable).
+ * The canonical source is guardrails/policies/output-rules.yaml.
+ */
+const FALLBACK_HARMFUL_PATTERNS = new Map<
+  string,
+  { severity: "critical" | "high" | "medium" | "low"; patterns: RegExp[] }
+>([
+  [
+    "exploitCode",
+    {
+      severity: "critical",
+      patterns: [
+        /(?:exploit code|poc|proof of concept)[\s:]*```|```[\s\S]*?(?:bash|shell|python|javascript|powershell)/gi,
+        /\b(?:shellcode|payload|reverse shell|one-liner|one liner)\b[\s:]*\w+/gi,
+        /\b(?:curl|wget|nc|netcat|bash)\b.{0,20}(?:pipe|&&|\||sh|bash)/gi,
+      ],
+    },
+  ],
+  [
+    "attackMethodology",
+    {
+      severity: "critical",
+      patterns: [
+        /(?:step|steps|how to|guide|tutorial)[\s:]*(?:hack|exploit|bypass|crack|break|attack)/gi,
+        /\b(?:brute force|dictionary attack|sql injection|xss|cross-site|privilege escalation|lateral movement)\b[\s:]*(?:using|with|via|through)/gi,
+      ],
+    },
+  ],
+  [
+    "exploitDisclosure",
+    {
+      severity: "high",
+      patterns: [
+        /\b(?:0day|zero-day|n-day|unpatched|undetected)\b[\s:]*(?:vulnerability|exploit|attack|malware)/gi,
+        /\b(?:ransomware|malware|worm|virus|trojan)[\s:]*(?:code|source|sample|implementation)/gi,
+      ],
+    },
+  ],
+]);
+
+/**
+ * Fallback PII patterns for output scanning.
+ */
+const FALLBACK_OUTPUT_PII_PATTERNS = new Map<string, RegExp>([
+  ["ssn", /\b(?:\d{3}-\d{2}-\d{4}|XXX-\d{2}-\d{4})\b/g],
+  ["creditCard", /\b(?:\d{4}[-\s]?){3}\d{4}(?:[-\s]?\d{1,4})?\b/g],
+  ["apiKey", /\b(?:api[_-]?key|secret|token|password)[\s:]*[a-zA-Z0-9]{20,}/gi],
+  ["privateKey", /-----BEGIN (?:RSA|DSA|EC|OPENSSH|PRIVATE) KEY-----/gi],
+  ["password", /\b(?:password|passwd|pwd)[\s:]*[^\s]{8,}\b/gi],
+  ["email", /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g],
+]);
 
 /**
  * Configuration validation schema
@@ -146,8 +184,15 @@ export async function checkCitations(
     });
 
     // Extract citation patterns (§, CFR, Rule, Control, etc.)
-    const citationPattern =
-      /(?:§\s*\d+[\.\-]\d+|CFR\s*§?\s*\d+[\.\-]\d+|\b(?:HIPAA|GDPR|SOC\s*2|ISO\s*27001|PCI-DSS|CIS|NIST|FedRAMP)\b|\b(?:Rule|Standard|Control)\s*[A-Z0-9\-]+)/gi;
+    // Try policy-loaded pattern first, fall back to hardcoded
+    let citationPattern: RegExp;
+    try {
+      const compiled = getCompiledOutputPatterns();
+      citationPattern = compiled.citationPattern;
+    } catch {
+      citationPattern =
+        /(?:§\s*\d+[\.\-]\d+|CFR\s*§?\s*\d+[\.\-]\d+|\b(?:HIPAA|GDPR|SOC\s*2|ISO\s*27001|PCI-DSS|CIS|NIST|FedRAMP)\b|\b(?:Rule|Standard|Control)\s*[A-Z0-9\-]+)/gi;
+    }
 
     const citationMatches = output.match(citationPattern) || [];
     const uniqueCitations = Array.from(new Set(citationMatches.map((c) => c.toUpperCase())));
@@ -217,9 +262,9 @@ export function filterHarmful(output: string): {
   }> = [];
   let maxSeverity: "critical" | "high" | "medium" | "low" = "low";
 
-  for (const [category, { patterns, severity }] of Object.entries(
-    HARMFUL_PATTERNS
-  )) {
+  const harmfulPatterns = getHarmfulPatterns();
+
+  for (const [category, { patterns, severity }] of harmfulPatterns.entries()) {
     for (const pattern of patterns) {
       const matches = output.match(pattern);
       if (matches && matches.length > 0) {
@@ -263,7 +308,9 @@ function scanForPII(output: string): PIIScanResult {
     confidence: number;
   }> = [];
 
-  for (const [type, pattern] of Object.entries(OUTPUT_PII_PATTERNS)) {
+  const outputPIIPatterns = getOutputPIIPatterns();
+
+  for (const [type, pattern] of outputPIIPatterns.entries()) {
     const matches = output.match(pattern);
     if (matches && matches.length > 0) {
       matches.forEach((match) => {
