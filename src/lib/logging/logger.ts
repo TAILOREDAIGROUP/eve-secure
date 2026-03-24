@@ -57,7 +57,6 @@ function redactSensitiveData(obj: unknown, depth: number = 0): unknown {
   if (obj === null || obj === undefined) return obj;
 
   if (typeof obj === 'string') {
-    // Check if string contains patterns that look like secrets
     if (
       obj.length > 20 &&
       /^[a-zA-Z0-9+/=]+$/.test(obj) &&
@@ -77,114 +76,99 @@ function redactSensitiveData(obj: unknown, depth: number = 0): unknown {
   const redacted: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     const isSensitive = SENSITIVE_PATTERNS.some((pattern) => pattern.test(key));
-
     if (isSensitive) {
       redacted[key] = '[REDACTED]';
     } else {
       redacted[key] = redactSensitiveData(value, depth + 1);
     }
   }
-
   return redacted;
 }
 
 /**
- * Create pino logger instance
+ * Create pino logger instance — edge-compatible (no worker threads)
+ *
+ * NOTE: pino.transport() uses Node.js worker threads which are NOT available
+ * on Cloudflare Pages/Workers. Instead we use pino's direct mode which writes
+ * to stdout synchronously. Logs are captured by Cloudflare's log system and
+ * can be tailed via \`wrangler tail\` or forwarded to any log drain.
  */
 function createPinoLogger(): PinoLogger {
-  const isProduction = process.env.NODE_ENV === 'production';
   const isLocal = process.env.NODE_ENV === 'development';
 
-  const transport = pino.transport({
-    targets: [
-      {
-        level: isLocal ? 'debug' : 'info',
-        target: 'pino/file',
-        options: { destination: 1 }, // stdout
-      },
-    ],
-  });
-
-  return pino(
-    {
-      level: isLocal ? 'debug' : 'info',
-      timestamp: pino.stdTimeFunctions.isoTime,
-      serializers: {
-        req: (req: any) => ({
-          id: req.id,
-          method: req.method,
-          url: req.url,
-          remoteAddress: req.remoteAddress,
-        }),
-        err: pino.stdSerializers.err,
-      },
+  return pino({
+    level: isLocal ? 'debug' : 'info',
+    timestamp: pino.stdTimeFunctions.isoTime,
+    serializers: {
+      req: (req: Record<string, unknown>) => ({
+        id: req.id,
+        method: req.method,
+        url: req.url,
+        remoteAddress: req.remoteAddress,
+      }),
+      err: pino.stdSerializers.err,
     },
-    transport
-  );
+    // In production on Cloudflare, use JSON format (default).
+    // In development, use pino-pretty if available, otherwise JSON.
+    ...(isLocal
+      ? {
+          transport: {
+            target: 'pino-pretty',
+            options: { colorize: true },
+          },
+        }
+      : {}),
+  });
 }
 
 /**
  * Global logger instance
  */
-const pinoLogger = createPinoLogger();
+let pinoLogger: PinoLogger;
+try {
+  pinoLogger = createPinoLogger();
+} catch {
+  // Fallback if pino-pretty isn't installed in dev
+  pinoLogger = pino({
+    level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
+    timestamp: pino.stdTimeFunctions.isoTime,
+  });
+}
 
 /**
  * Main logger interface with structured logging
  */
 export const logger = {
-  /**
-   * Debug level - local development only
-   */
   debug: (message: string, metadata?: Record<string, unknown>) => {
     pinoLogger.debug(
       { metadata: redactSensitiveData(metadata) },
       message
     );
   },
-
-  /**
-   * Info level - normal operations
-   */
   info: (message: string, metadata?: Record<string, unknown>) => {
     pinoLogger.info(
       { metadata: redactSensitiveData(metadata) },
       message
     );
   },
-
-  /**
-   * Warn level - anomalies, deprecated usage
-   */
   warn: (message: string, metadata?: Record<string, unknown>) => {
     pinoLogger.warn(
       { metadata: redactSensitiveData(metadata) },
       message
     );
   },
-
-  /**
-   * Error level - recoverable failures
-   */
   error: (message: string, metadata?: Record<string, unknown>) => {
     pinoLogger.error(
       { metadata: redactSensitiveData(metadata) },
       message
     );
   },
-
-  /**
-   * Critical level - security events, unrecoverable failures
-   */
   critical: (message: string, metadata?: Record<string, unknown>) => {
     pinoLogger.error(
       { level: 'CRITICAL', metadata: redactSensitiveData(metadata) },
       message
     );
   },
-
-  /**
-   * Get child logger with request context
-   */
   child: (bindings: Record<string, unknown>) => {
     return pinoLogger.child(bindings);
   },
@@ -205,23 +189,18 @@ export function createRequestLogger(
     requestId: id,
     tenantId,
     userId,
-
     debug: (message: string, metadata?: Record<string, unknown>) => {
       child.debug({ metadata: redactSensitiveData(metadata) }, message);
     },
-
     info: (message: string, metadata?: Record<string, unknown>) => {
       child.info({ metadata: redactSensitiveData(metadata) }, message);
     },
-
     warn: (message: string, metadata?: Record<string, unknown>) => {
       child.warn({ metadata: redactSensitiveData(metadata) }, message);
     },
-
     error: (message: string, metadata?: Record<string, unknown>) => {
       child.error({ metadata: redactSensitiveData(metadata) }, message);
     },
-
     critical: (message: string, metadata?: Record<string, unknown>) => {
       child.error(
         { level: 'CRITICAL', metadata: redactSensitiveData(metadata) },
@@ -229,39 +208,4 @@ export function createRequestLogger(
       );
     },
   };
-}
-
-/**
- * Express middleware to create request logger
- */
-export function loggingMiddleware(
-  req: any,
-  res: any,
-  next: Function
-) {
-  const requestId = req.headers['x-request-id'] || uuidv4();
-  const tenantId = req.tenantId;
-  const userId = req.userId;
-
-  // Attach logger to request
-  req.logger = createRequestLogger(requestId, tenantId, userId);
-
-  // Log incoming request
-  req.logger.debug('Incoming request', {
-    method: req.method,
-    url: req.url,
-    userAgent: req.get('user-agent'),
-  });
-
-  // Log response when it's finished
-  res.on('finish', () => {
-    req.logger.info('Request completed', {
-      method: req.method,
-      url: req.url,
-      statusCode: res.statusCode,
-      duration: Date.now() - req.startTime,
-    });
-  });
-
-  next();
 }
