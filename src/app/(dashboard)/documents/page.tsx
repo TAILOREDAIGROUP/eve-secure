@@ -69,7 +69,7 @@ export default function DocumentsPage() {
   const { data: documentList, isLoading } = useQuery<DocumentList>({
     queryKey: ["documents"],
     queryFn: async () => {
-      const res = await fetch("/api/documents");
+      const res = await fetch("/api/v1/documents");
       if (!res.ok) throw new Error("Failed to fetch documents");
       return res.json();
     },
@@ -78,7 +78,7 @@ export default function DocumentsPage() {
   const generateMutation = useMutation({
     mutationFn: async (docType: string) => {
       setIsGenerating(true);
-      const res = await fetch("/api/documents/generate", {
+      const res = await fetch("/api/v1/documents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: docType }),

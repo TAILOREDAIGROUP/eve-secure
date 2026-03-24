@@ -53,7 +53,7 @@ export default function AssessmentPage() {
     queryKey: ["assessment", currentAssessmentId],
     queryFn: async () => {
       const res = await fetch(
-        `/api/assessment/${currentAssessmentId || "current"}`
+        `/api/v1/assessment/${currentAssessmentId || "current"}`
       );
       if (!res.ok) throw new Error("Failed to fetch assessment");
       return res.json();

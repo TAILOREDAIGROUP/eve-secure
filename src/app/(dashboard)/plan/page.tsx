@@ -65,9 +65,12 @@ export default function PlanPage() {
   const { data: actionPlan, isLoading } = useQuery<ActionPlan>({
     queryKey: ["action-plan"],
     queryFn: async () => {
-      const res = await fetch("/api/plan/current");
+      const res = await fetch("/api/v1/plan");
       if (!res.ok) throw new Error("Failed to fetch plan");
-      return res.json();
+      const data = await res.json();
+      // Return the most recent plan
+      const plans = data.plans || [data];
+      return plans[0] || null;
     },
   });
 

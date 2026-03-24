@@ -72,7 +72,7 @@ export default function IRWalkthroughPage() {
   const { data: session, isLoading } = useQuery<IRSession>({
     queryKey: ["ir-session"],
     queryFn: async () => {
-      const res = await fetch("/api/ir/current-session");
+      const res = await fetch("/api/v1/ir/start");
       if (!res.ok) throw new Error("Failed to fetch IR session");
       return res.json();
     },
@@ -80,7 +80,7 @@ export default function IRWalkthroughPage() {
 
   const addUpdateMutation = useMutation({
     mutationFn: async (data: Omit<IRUpdate, "id" | "timestamp">) => {
-      const res = await fetch("/api/ir/add-update", {
+      const res = await fetch("/api/v1/ir/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

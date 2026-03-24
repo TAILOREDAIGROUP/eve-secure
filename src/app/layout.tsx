@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import { QueryProvider } from "@/components/query-provider";
 import "@/styles/globals.css";
 
 export const metadata: Metadata = {
@@ -85,7 +86,9 @@ export default function RootLayout({
             enableSystem
             storageKey="eve-secure-theme"
           >
-            {children}
+            <QueryProvider>
+              {children}
+            </QueryProvider>
             <Toaster />
           </ThemeProvider>
         </body>

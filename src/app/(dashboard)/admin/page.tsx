@@ -58,7 +58,7 @@ export default function AdminPage() {
   const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
     queryKey: ["admin-stats"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/stats");
+      const res = await fetch("/api/v1/admin/tenants");
       if (!res.ok) throw new Error("Failed to fetch stats");
       return res.json();
     },
@@ -69,7 +69,7 @@ export default function AdminPage() {
     useQuery<KnowledgeMetrics>({
       queryKey: ["knowledge-metrics"],
       queryFn: async () => {
-        const res = await fetch("/api/admin/knowledge/metrics");
+        const res = await fetch("/api/v1/admin/knowledge");
         if (!res.ok) throw new Error("Failed to fetch metrics");
         return res.json();
       },
@@ -80,7 +80,7 @@ export default function AdminPage() {
     useQuery<EvalMetrics>({
       queryKey: ["eval-metrics"],
       queryFn: async () => {
-        const res = await fetch("/api/admin/eval/metrics");
+        const res = await fetch("/api/v1/admin/evals");
         if (!res.ok) throw new Error("Failed to fetch metrics");
         return res.json();
       },

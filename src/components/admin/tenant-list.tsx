@@ -44,7 +44,7 @@ export function TenantList() {
   const { data: response, isLoading } = useQuery<TenantListResponse>({
     queryKey: ["tenants"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/tenants?page=1&pageSize=50");
+      const res = await fetch("/api/v1/admin/tenants?page=1&pageSize=50");
       if (!res.ok) throw new Error("Failed to fetch tenants");
       return res.json();
     },

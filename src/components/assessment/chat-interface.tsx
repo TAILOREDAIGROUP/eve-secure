@@ -65,7 +65,7 @@ export function ChatInterface({
       setIsLoading(true);
       try {
         const response = await fetch(
-          `/api/assessment/${assessmentId}/section/${sectionId}/initial`
+          `/api/v1/assessment/${assessmentId}`
         );
         if (response.ok) {
           const data = await response.json();
@@ -110,7 +110,7 @@ export function ChatInterface({
 
       // Subscribe to SSE stream
       await subscribe(
-        `/api/assessment/${assessmentId}/section/${sectionId}/response`,
+        `/api/v1/assessment/${assessmentId}/respond`,
         {
           method: "POST",
           body: JSON.stringify({

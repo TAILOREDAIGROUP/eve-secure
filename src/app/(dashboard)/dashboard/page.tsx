@@ -39,9 +39,12 @@ export default function DashboardPage() {
     useQuery<AssessmentStatus>({
       queryKey: ["assessment-status", userId],
       queryFn: async () => {
-        const res = await fetch("/api/assessment/status");
+        const res = await fetch("/api/v1/assessment");
         if (!res.ok) throw new Error("Failed to fetch assessment status");
-        return res.json();
+        const data = await res.json();
+        // Return the most recent session as the current status
+        const sessions = data.sessions || [data];
+        return sessions[0] || null;
       },
       enabled: !!userId,
     });
@@ -51,9 +54,39 @@ export default function DashboardPage() {
   >({
     queryKey: ["recent-activity", userId],
     queryFn: async () => {
-      const res = await fetch("/api/activity/recent?limit=5");
-      if (!res.ok) throw new Error("Failed to fetch activity");
-      return res.json();
+      // Derive activity from assessment and plan data
+      const [assessRes, planRes] = await Promise.all([
+        fetch("/api/v1/assessment"),
+        fetch("/api/v1/plan"),
+      ]);
+      const activities: RecentActivity[] = [];
+      if (assessRes.ok) {
+        const data = await assessRes.json();
+        const sessions = data.sessions || [data];
+        for (const session of sessions.slice(0, 3)) {
+          activities.push({
+            id: session.id,
+            type: session.status === "completed" ? "assessment_updated" : "assessment_created",
+            title: `Assessment ${session.status}`,
+            timestamp: session.lastUpdated || session.createdAt || new Date().toISOString(),
+            details: `Progress: ${session.progress || 0}%`,
+          });
+        }
+      }
+      if (planRes.ok) {
+        const data = await planRes.json();
+        const plans = data.plans || [data];
+        for (const p of plans.slice(0, 2)) {
+          activities.push({
+            id: p.id,
+            type: "plan_generated",
+            title: "Action plan generated",
+            timestamp: p.createdAt || new Date().toISOString(),
+            details: `${p.totalActions || 0} action items`,
+          });
+        }
+      }
+      return activities.slice(0, 5);
     },
     enabled: !!userId,
   });

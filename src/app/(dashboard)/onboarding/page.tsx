@@ -80,7 +80,7 @@ export default function OnboardingPage() {
   const { data: profile, isLoading } = useQuery<OrganizationProfile>({
     queryKey: ["organization-profile"],
     queryFn: async () => {
-      const res = await fetch("/api/organization/profile");
+      const res = await fetch("/api/v1/onboarding");
       if (!res.ok) throw new Error("Failed to fetch profile");
       return res.json();
     },
@@ -88,8 +88,8 @@ export default function OnboardingPage() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: Partial<OrganizationProfile>) => {
-      const res = await fetch("/api/organization/profile", {
-        method: "PUT",
+      const res = await fetch("/api/v1/onboarding", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });

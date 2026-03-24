@@ -46,7 +46,7 @@ export default function SettingsPage() {
   const { data: settings, isLoading } = useQuery<UserSettings>({
     queryKey: ["user-settings"],
     queryFn: async () => {
-      const res = await fetch("/api/settings");
+      const res = await fetch("/api/v1/onboarding");
       if (!res.ok) throw new Error("Failed to fetch settings");
       return res.json();
     },
@@ -63,7 +63,7 @@ export default function SettingsPage() {
 
   const updateNotificationsMutation = useMutation({
     mutationFn: async (data: UserSettings["notifications"]) => {
-      const res = await fetch("/api/settings/notifications", {
+      const res = await fetch("/api/v1/onboarding", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -88,7 +88,7 @@ export default function SettingsPage() {
 
   const generateCodesMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/settings/emergency-codes", {
+      const res = await fetch("/api/v1/auth/emergency", {
         method: "POST",
       });
       if (!res.ok) throw new Error("Failed to generate codes");
