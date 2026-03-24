@@ -1,0 +1,296 @@
+{
+  "framework": "Cyber Insurance Requirements",
+  "version": "1.0",
+  "source": "Industry carrier requirements, Coalition, Corvus, Chubb, AIG, Beazley analysis",
+  "last_updated": "2026-03-24",
+  "requirements": [
+    {
+      "id": "INS-001",
+      "requirement": "Multi-Factor Authentication (MFA)",
+      "nist_mapping": "PR.AC-01",
+      "implementation_action": "Deploy MFA on all remote access, email, VPN, and privileged accounts. Hardware tokens preferred; SMS acceptable as minimum. Must cover 100% of users, not just admins. Conditional access policies should enforce MFA on all cloud application logins and block legacy authentication protocols that cannot support MFA.",
+      "documentation_needed": "MFA enrollment report showing 100% coverage, MFA policy document, exception list with compensating controls, conditional access policy screenshots, hardware token inventory",
+      "common_exclusions": [
+        "Claims arising from MFA non-compliance on breached account",
+        "Social engineering bypassing MFA (separate coverage)"
+      ],
+      "carrier_notes": "Most carriers now REQUIRE MFA as a condition of coverage. Coalition, Corvus, and Beazley will decline coverage without MFA on email and remote access. Chubb requires MFA on all admin accounts and remote access as a binding condition. Premium reduction: 5-15% with full MFA deployment. AIG's CyberEdge application specifically asks for MFA coverage percentage and will surcharge 20-30% if below 95%."
+    },
+    {
+      "id": "INS-002",
+      "requirement": "Endpoint Detection and Response (EDR)",
+      "nist_mapping": "DE.CM-01",
+      "implementation_action": "Deploy EDR on all endpoints including servers, workstations, and laptops. Must include real-time behavioral analysis, automated response capabilities, and 24/7 monitoring. Acceptable solutions include CrowdStrike Falcon, SentinelOne, Microsoft Defender for Endpoint, or equivalent. Legacy antivirus alone is no longer sufficient for most carriers.",
+      "documentation_needed": "EDR deployment report showing coverage percentage, EDR policy configuration documentation, alert escalation procedures, managed detection and response (MDR) SLA if outsourced, quarterly detection efficacy reports",
+      "common_exclusions": [
+        "Malware on unprotected endpoints where EDR was available but not deployed",
+        "Incidents where EDR alerts were ignored or not investigated within SLA"
+      ],
+      "carrier_notes": "Coalition mandates EDR on all endpoints as of 2025 renewals. Corvus Risk Insights platform automatically checks for EDR presence during underwriting. Beazley offers 8-12% premium discount for CrowdStrike or SentinelOne with 24/7 MDR. Chubb will not bind new policies for organizations over 50 employees without EDR. Average premium impact: $2,000-$5,000 annual savings for mid-market accounts ($5M-$25M revenue)."
+    },
+    {
+      "id": "INS-003",
+      "requirement": "Email Security (DMARC, SPF, DKIM, Advanced Filtering)",
+      "nist_mapping": "PR.DS-02",
+      "implementation_action": "Implement DMARC at p=quarantine minimum (p=reject preferred) with SPF and DKIM alignment. Deploy advanced email filtering with sandboxing, URL rewriting, and attachment detonation. Enable external sender tagging and impersonation protection for executives and finance personnel. Block auto-forwarding to external domains.",
+      "documentation_needed": "DMARC record showing enforcement policy, SPF record documentation, DKIM signing configuration, email gateway configuration report, phishing simulation results, email filtering false positive/negative rates",
+      "common_exclusions": [
+        "Business email compromise where DMARC was not enforced",
+        "Phishing attacks on domains without SPF/DKIM alignment"
+      ],
+      "carrier_notes": "Coalition's external scanning checks DMARC status during quoting and will flag p=none as a deficiency. Corvus requires DMARC at enforcement for all primary domains. Beazley's application specifically asks about email filtering vendor and configuration. Premium impact: 3-8% reduction with full DMARC enforcement. AIG will issue a subjectivity requiring DMARC enforcement within 60 days of binding for new accounts. Accounts with p=reject across all domains see the best rates."
+    },
+    {
+      "id": "INS-004",
+      "requirement": "Backup Strategy (3-2-1 Rule, Offline/Immutable)",
+      "nist_mapping": "PR.IP-04",
+      "implementation_action": "Implement 3-2-1 backup strategy: three copies of data on two different media types with one copy offsite. At least one backup must be air-gapped or immutable (cannot be modified or deleted by ransomware or compromised admin credentials). Test restoration quarterly with documented RTOs and RPOs. Backup admin credentials must be separate from domain credentials.",
+      "documentation_needed": "Backup architecture diagram, backup testing results with restoration times, immutable/air-gapped backup configuration evidence, backup retention policy, RTO/RPO documentation per system tier, backup admin account isolation evidence",
+      "common_exclusions": [
+        "Ransomware losses where backups were encrypted due to lack of air-gap",
+        "Business interruption exceeding documented RTO where backups were untested"
+      ],
+      "carrier_notes": "Ransomware is the #1 claim driver. Coalition reports 60% of ransomware claims involve compromised backups. All major carriers now ask specifically about offline/immutable backups. Beazley and Corvus require immutable backups as a binding condition for accounts over $10M revenue. Chubb offers 10-15% premium reduction for verified air-gapped backups with quarterly testing. Without immutable backups, expect $3,000-$8,000 in additional premium for mid-market accounts and potential coverage sublimits on ransomware."
+    },
+    {
+      "id": "INS-005",
+      "requirement": "Incident Response Plan (Documented and Tested)",
+      "nist_mapping": "RS.RP-01",
+      "implementation_action": "Develop and maintain a written incident response plan covering detection, containment, eradication, recovery, and post-incident activities. Plan must include roles and responsibilities, communication procedures (internal and external), legal notification requirements, and forensic investigation procedures. Conduct tabletop exercises at least annually with executive participation. Pre-negotiate retainers with IR forensics firm, breach counsel, and crisis communications.",
+      "documentation_needed": "Written incident response plan (dated and version-controlled), tabletop exercise reports with participant lists, IR retainer agreements, contact cards for IR team members, post-incident review reports from any past incidents",
+      "common_exclusions": [
+        "Increased losses due to delayed response where no IR plan existed",
+        "Regulatory penalties attributable to notification failures"
+      ],
+      "carrier_notes": "Most carriers provide IR panel vendors as part of the policy (Coalition Incident Response, Beazley Breach Response). Using carrier-approved vendors typically results in faster claims processing. Chubb requires evidence of annual tabletop exercises for accounts over $50M revenue. AIG CyberEdge offers a 3-5% discount for organizations with pre-negotiated IR retainers. Coalition provides free IR plan templates and tabletop scenarios to policyholders. Having an untested or outdated plan (>18 months) can result in coverage disputes during claims."
+    },
+    {
+      "id": "INS-006",
+      "requirement": "Security Awareness Training (Phishing Simulations)",
+      "nist_mapping": "PR.AT-01",
+      "implementation_action": "Implement mandatory security awareness training for all employees at least annually, with monthly phishing simulations. New hire training must occur within 30 days of start date. Track phishing simulation click rates and require remedial training for repeat clickers. Training must cover BEC, social engineering, data handling, and reporting procedures. Target organization-wide phishing click rate below 5%.",
+      "documentation_needed": "Training completion reports showing 100% participation, phishing simulation results with click rates trending over time, training curriculum content, remedial training tracking for repeat offenders, new hire training completion evidence",
+      "common_exclusions": [
+        "Social engineering losses where employee had not completed required training",
+        "BEC claims where targeted employee had failed prior phishing simulations without remediation"
+      ],
+      "carrier_notes": "Coalition provides KnowBe4 integration and monitors phishing simulation results through their policyholder dashboard. Corvus requires annual training evidence at renewal. Beazley asks for phishing click rates on the application and organizations above 15% click rate face surcharges of 5-10%. AIG offers risk management credits ($1,000-$2,500) for organizations demonstrating consistent sub-5% click rates. Training is considered a baseline control by all major carriers; lack of any training program is a decline trigger for most."
+    },
+    {
+      "id": "INS-007",
+      "requirement": "Patch Management (Critical Patches Within 14 Days)",
+      "nist_mapping": "PR.IP-12",
+      "implementation_action": "Establish a formal patch management program with defined SLAs: critical/zero-day vulnerabilities patched within 14 days (72 hours for actively exploited), high within 30 days, medium within 60 days, low within 90 days. Maintain an accurate asset inventory to ensure full coverage. Internet-facing systems must be prioritized. Implement emergency patching procedures for zero-days. Track patch compliance rates with a target of 95% or higher.",
+      "documentation_needed": "Patch management policy with defined SLAs, patch compliance reports showing percentage by severity, vulnerability scanner output demonstrating patching cadence, emergency patch deployment records, exception/deferral documentation with compensating controls",
+      "common_exclusions": [
+        "Claims arising from exploitation of vulnerabilities with patches available for more than 30 days",
+        "Losses from known CVEs where carrier-mandated patching timeline was exceeded"
+      ],
+      "carrier_notes": "Corvus and Coalition actively scan policyholder attack surfaces and issue critical alerts for unpatched vulnerabilities. Failure to remediate carrier-identified vulnerabilities within specified timeframes (typically 14-30 days) can result in coverage restrictions or mid-term cancellation. Beazley's 2025 application asks specifically about patching SLAs for internet-facing systems. AIG has denied claims where known critical vulnerabilities (e.g., Log4j, MOVEit) remained unpatched beyond 30 days. Premium impact: consistent patching compliance can reduce premiums 5-10%."
+    },
+    {
+      "id": "INS-008",
+      "requirement": "Network Segmentation",
+      "nist_mapping": "PR.AC-05",
+      "implementation_action": "Segment networks to isolate critical assets, operational technology, development environments, and general user traffic. Implement microsegmentation for high-value targets (domain controllers, financial systems, backup infrastructure). Restrict lateral movement using host-based firewalls and network access control lists. OT/ICS networks must be fully air-gapped or isolated behind purpose-built firewalls with no direct internet access.",
+      "documentation_needed": "Network architecture diagram showing segmentation boundaries, firewall rule documentation, VLAN configuration, microsegmentation policy, penetration test results validating segmentation effectiveness, OT/IT boundary documentation",
+      "common_exclusions": [
+        "Ransomware spread to systems in flat networks where segmentation was feasible",
+        "OT/ICS incidents where IT/OT boundary was not enforced"
+      ],
+      "carrier_notes": "Segmentation is a key factor in limiting ransomware blast radius and reducing claim severity. Coalition data shows organizations with proper segmentation experience 40% lower average claim costs. Chubb requires network segmentation evidence for accounts over $100M revenue. Beazley specifically evaluates Active Directory tier model implementation. For manufacturing and critical infrastructure, all carriers ask about OT/IT segmentation. Premium impact: 3-7% reduction for demonstrated microsegmentation around critical assets."
+    },
+    {
+      "id": "INS-009",
+      "requirement": "Privileged Access Management (PAM)",
+      "nist_mapping": "PR.AC-04",
+      "implementation_action": "Implement a PAM solution to vault, rotate, and monitor all privileged credentials. Enforce just-in-time access for administrative tasks with time-limited privilege elevation. Eliminate persistent admin accounts where possible. Separate admin accounts from daily-use accounts for all IT staff. Implement privileged access workstations (PAWs) for Tier 0 asset management. Monitor and alert on all privileged session activity.",
+      "documentation_needed": "PAM solution deployment evidence, privileged account inventory, credential rotation policy and compliance evidence, just-in-time access configuration, admin account separation policy, privileged session recording samples, PAW deployment documentation",
+      "common_exclusions": [
+        "Breaches involving compromised admin accounts without PAM controls",
+        "Lateral movement using shared or non-rotated service account credentials"
+      ],
+      "carrier_notes": "Compromised privileged credentials are involved in over 80% of ransomware incidents per Coalition claims data. Corvus requires PAM for all domain admin accounts as a binding condition for accounts over $25M revenue. Beazley asks about local admin password management (LAPS or equivalent) on the application. AIG offers 5-8% premium reduction for full PAM deployment with session monitoring. Chubb underwriters specifically evaluate Active Directory security posture including admin account practices. Organizations with no PAM controls face significant surcharges or sublimits on ransomware coverage."
+    },
+    {
+      "id": "INS-010",
+      "requirement": "Encryption (At Rest and In Transit)",
+      "nist_mapping": "PR.DS-01",
+      "implementation_action": "Encrypt all sensitive data at rest using AES-256 or equivalent. Enable full disk encryption (BitLocker, FileVault) on all endpoints and mobile devices. Encrypt data in transit using TLS 1.2 minimum (TLS 1.3 preferred). Disable legacy protocols (SSL, TLS 1.0/1.1). Encrypt database fields containing PII, PHI, or financial data. Implement certificate management to prevent expiration-related outages.",
+      "documentation_needed": "Encryption policy document, BitLocker/FileVault deployment compliance report, TLS configuration audit results, database encryption evidence for sensitive fields, certificate inventory and management process, key management procedures",
+      "common_exclusions": [
+        "Data breach notification costs where unencrypted PII was exposed (some carriers reduce coverage)",
+        "Regulatory fines for unencrypted PHI exposure under HIPAA"
+      ],
+      "carrier_notes": "Encryption directly impacts breach notification obligations and claim costs. Beazley reports that breaches involving encrypted data result in 60-70% lower notification costs. Most state breach notification laws have safe harbors for encrypted data. Coalition and Corvus check for TLS configuration on internet-facing services during underwriting scans. Chubb requires full disk encryption on all mobile devices as a standard condition. Premium impact: 2-5% reduction for comprehensive encryption program. Healthcare organizations without PHI encryption face steep surcharges ($5,000-$15,000) or coverage declinations from AIG and Beazley."
+    },
+    {
+      "id": "INS-011",
+      "requirement": "Vendor/Third-Party Risk Management",
+      "nist_mapping": "GV.SC-01",
+      "implementation_action": "Establish a formal third-party risk management program with vendor tiering based on data access and criticality. Require security assessments (SOC 2, ISO 27001, or equivalent) for all critical vendors. Include cyber insurance requirements in vendor contracts. Maintain a vendor inventory with data flow mapping. Conduct annual reassessments of critical vendors. Include right-to-audit clauses and breach notification requirements (24-48 hours) in contracts.",
+      "documentation_needed": "Vendor risk management policy, vendor inventory with tier classifications, vendor assessment questionnaires and results, contract provisions for security requirements, vendor incident notification procedures, fourth-party risk considerations for critical vendors",
+      "common_exclusions": [
+        "Dependent business interruption losses from unvetted vendors",
+        "Data breaches through vendor access where no security assessment was performed"
+      ],
+      "carrier_notes": "Supply chain attacks (SolarWinds, Kaseya, MOVEit) have driven significant carrier focus on vendor risk. Coalition includes dependent business interruption coverage but requires evidence of vendor management program for limits above $1M. Beazley's application now includes specific questions about critical vendor assessment processes. AIG CyberEdge includes contingent business interruption with sublimits typically at 50% of the primary BI limit. Corvus evaluates third-party risk as part of their dynamic scanning. Organizations heavily dependent on single vendors without alternatives face coverage restrictions. Average contingent BI sublimit: $250,000-$1M for mid-market accounts."
+    },
+    {
+      "id": "INS-012",
+      "requirement": "Vulnerability Scanning (Quarterly Minimum)",
+      "nist_mapping": "DE.CM-08",
+      "implementation_action": "Conduct vulnerability scans at least quarterly for internal assets and monthly for internet-facing systems. Implement continuous vulnerability scanning where possible. Integrate vulnerability data with patch management workflows. Conduct annual penetration testing by qualified third parties. Track vulnerability aging and mean-time-to-remediate metrics. Scan all new assets within 24 hours of deployment.",
+      "documentation_needed": "Vulnerability scanning policy, quarterly scan reports with trend analysis, penetration test reports (executive summary acceptable), remediation tracking metrics, scanner coverage documentation, mean-time-to-remediate reports by severity",
+      "common_exclusions": [
+        "Claims from vulnerabilities that would have been identified by standard scanning",
+        "Exploitation of vulnerabilities present in scan results but not remediated"
+      ],
+      "carrier_notes": "Coalition and Corvus perform their own external vulnerability scans and share results with policyholders. Carriers increasingly use scan data to adjust pricing mid-term. Beazley requires annual penetration testing for accounts with limits above $5M. Chubb asks about vulnerability scanning frequency and tools on the application. AIG offers risk management credits ($500-$1,500) for organizations sharing penetration test executive summaries. Organizations with no scanning program face 10-20% surcharges. Regular scanning with demonstrated remediation cadence is now considered table stakes by all major carriers."
+    },
+    {
+      "id": "INS-013",
+      "requirement": "Logging and Monitoring (SIEM/SOC)",
+      "nist_mapping": "DE.AE-02",
+      "implementation_action": "Implement centralized log collection and monitoring covering authentication events, privileged access, network traffic, endpoint activity, and cloud service logs. Deploy a SIEM or equivalent with correlation rules for common attack patterns. Maintain logs for minimum 90 days hot storage and 1 year cold storage. Establish 24/7 monitoring through internal SOC or managed SOC provider. Define alert triage and escalation procedures with SLAs.",
+      "documentation_needed": "Logging policy with retention requirements, SIEM architecture documentation, log source inventory, alert triage and escalation procedures, SOC operating procedures or MSSP SLA, sample incident detection and response timeline",
+      "common_exclusions": [
+        "Claims where inadequate logging prevented forensic investigation (may reduce payout)",
+        "Extended dwell time losses where monitoring would have detected lateral movement"
+      ],
+      "carrier_notes": "Average dwell time directly correlates with claim severity. Coalition data shows organizations with 24/7 SOC monitoring have 50% lower average claim costs due to faster detection. Corvus requires SIEM or equivalent for accounts over $50M revenue. Beazley offers 5-10% premium discount for 24/7 managed SOC with sub-30-minute alert triage SLA. Chubb asks about log retention periods and monitoring coverage on the application. Without centralized logging, forensic investigation costs increase significantly ($50,000-$150,000 additional) and carriers may dispute claim amounts due to inability to determine breach scope."
+    },
+    {
+      "id": "INS-014",
+      "requirement": "Business Continuity Plan",
+      "nist_mapping": "RC.RP-01",
+      "implementation_action": "Develop and maintain a business continuity plan covering IT disaster recovery, operational continuity, and crisis management. Define RTOs and RPOs for all critical business functions. Identify single points of failure and establish redundancy. Test the plan annually through simulation exercises. Include manual workaround procedures for critical business processes. Pre-arrange agreements with recovery facilities and equipment providers.",
+      "documentation_needed": "Business continuity plan document, business impact analysis (BIA), disaster recovery test results, RTO/RPO definitions per system tier, crisis communication plan, annual exercise reports with lessons learned",
+      "common_exclusions": [
+        "Excess business interruption losses beyond documented RTOs where BCP was not followed",
+        "Extended downtime where no disaster recovery plan existed for affected systems"
+      ],
+      "carrier_notes": "Business interruption is the fastest-growing component of cyber claims. Coalition reports average BI losses of $128,000 per ransomware event. Beazley's waiting period (deductible for BI) is typically 8-12 hours; organizations with strong BCP recover faster and minimize BI claims. Chubb requires BCP documentation for accounts with BI limits exceeding $2M. AIG CyberEdge evaluates BCP maturity as a rating factor and organizations with tested BCPs receive 3-5% premium benefit. Most carriers cap BI coverage at $5M-$10M for mid-market; higher limits require detailed BCP review."
+    },
+    {
+      "id": "INS-015",
+      "requirement": "Data Classification and Handling",
+      "nist_mapping": "PR.DS-05",
+      "implementation_action": "Implement a data classification scheme (e.g., Public, Internal, Confidential, Restricted) with defined handling procedures for each level. Deploy data loss prevention (DLP) tools to prevent unauthorized data exfiltration. Maintain a data inventory identifying where sensitive data (PII, PHI, PCI, intellectual property) resides. Implement data retention and destruction policies. Apply classification labels to documents and emails containing sensitive data.",
+      "documentation_needed": "Data classification policy, data inventory/mapping of sensitive data locations, DLP policy configuration and incident reports, data retention schedule, data destruction procedures and certificates, privacy impact assessments for high-risk processing",
+      "common_exclusions": [
+        "Claims involving data types not disclosed on the application",
+        "Notification costs for data the insured was required to have destroyed per retention policy"
+      ],
+      "carrier_notes": "The volume and type of data an organization holds directly impacts premium calculation. PII record counts, PHI presence, and PCI data volume are primary rating factors. Coalition and Beazley require accurate data type and volume disclosure on applications; material misrepresentation can void coverage. Chubb applies per-record cost assumptions ($150-$300 per PII record, $400+ per PHI record) in pricing models. Organizations with strong DLP and data minimization programs demonstrate lower risk profiles. AIG offers 2-4% premium reduction for organizations with mature data classification and DLP programs."
+    },
+    {
+      "id": "INS-016",
+      "requirement": "Remote Access Security (VPN/ZTNA)",
+      "nist_mapping": "PR.AC-03",
+      "implementation_action": "Implement secure remote access using modern VPN with MFA or Zero Trust Network Access (ZTNA). Eliminate exposed RDP; if RDP is required, ensure it is accessible only through VPN/jump server with MFA. Deploy device compliance checking before granting access (patch status, EDR presence, encryption status). Implement split tunneling only with appropriate security controls. Migrate toward ZTNA model with per-application access rather than full network access.",
+      "documentation_needed": "Remote access architecture diagram, VPN/ZTNA configuration documentation, device compliance policy, RDP exposure scan results showing no direct internet exposure, remote access policy, conditional access/device trust configuration",
+      "common_exclusions": [
+        "Breaches through exposed RDP without MFA",
+        "Unauthorized access through VPN accounts without device compliance verification"
+      ],
+      "carrier_notes": "Exposed RDP is the single most common initial access vector in ransomware claims. Coalition and Corvus actively scan for exposed RDP and will issue binding subjectivities requiring remediation within 7 days. Beazley declined 15% more applications in 2025 due to exposed RDP. All major carriers consider direct RDP exposure a decline trigger regardless of other controls. VPN without MFA is treated similarly. ZTNA adoption is viewed favorably by underwriters with 5-10% premium benefit over traditional VPN. Chubb and AIG specifically ask about remote access architecture in supplemental questionnaires."
+    },
+    {
+      "id": "INS-017",
+      "requirement": "Cloud Security Configuration",
+      "nist_mapping": "PR.AC-06",
+      "implementation_action": "Implement cloud security posture management (CSPM) to continuously monitor configuration. Enforce MFA on all cloud admin accounts with break-glass procedures. Disable root account usage in AWS; use Organization SCPs. Enable cloud-native logging (CloudTrail, Azure Activity Log, GCP Audit Log) with centralized collection. Implement least-privilege IAM policies. Encrypt all cloud storage buckets/blobs by default. Enable versioning and MFA delete on critical storage. Regular access reviews for cloud entitlements.",
+      "documentation_needed": "Cloud security architecture document, CSPM scan results and remediation tracking, cloud IAM policy documentation, cloud logging configuration evidence, storage encryption settings, cloud security baseline/benchmark compliance (CIS Benchmarks), shared responsibility model acknowledgment",
+      "common_exclusions": [
+        "Data exposure from misconfigured cloud storage (S3 buckets, Azure blobs)",
+        "Cloud account compromise where root/admin MFA was not enabled"
+      ],
+      "carrier_notes": "Cloud misconfigurations are a growing claim driver. Coalition reports a 45% increase in cloud-related claims from 2024 to 2025. Corvus scans for exposed cloud storage as part of underwriting. Beazley requires cloud security details for organizations with more than 50% cloud infrastructure. AIG's supplemental cloud questionnaire evaluates shared responsibility model understanding and cloud-native security tool adoption. Chubb requires CSPM for organizations with significant cloud presence and limits above $5M. Premium impact: organizations demonstrating CIS Benchmark compliance for cloud environments see 5-8% premium reduction. Misconfigurations found during underwriting scans result in binding subjectivities."
+    },
+    {
+      "id": "INS-018",
+      "requirement": "Wire Transfer Verification Procedures",
+      "nist_mapping": "PR.IP-09",
+      "implementation_action": "Implement mandatory callback verification for all wire transfers and ACH payment changes using a known, pre-established phone number (not one provided in the email request). Require dual authorization for transfers exceeding $10,000. Establish daily aggregate transfer limits. Train finance personnel specifically on BEC and invoice fraud tactics. Implement email banners for external messages. Create an approved vendor payment change procedure requiring multi-channel verification and a mandatory waiting period (24-48 hours) for banking detail changes.",
+      "documentation_needed": "Wire transfer verification policy, callback verification procedures, dual authorization thresholds and evidence of enforcement, finance team BEC-specific training records, vendor payment change procedures, daily/transaction transfer limits documentation",
+      "common_exclusions": [
+        "Funds transfer losses where callback verification was not performed",
+        "Losses exceeding policy sublimit for social engineering/funds transfer fraud"
+      ],
+      "carrier_notes": "Social engineering and funds transfer fraud have separate sublimits in most policies, typically $100,000-$500,000 versus the full policy limit. Coalition offers social engineering coverage up to $250,000 standard with buy-up to $500,000. Beazley's social engineering sublimit is typically 25% of the aggregate limit. Chubb requires documented callback procedures as a condition of funds transfer fraud coverage. AIG will deny social engineering claims where the insured's own verification procedures were not followed. Premium for enhanced social engineering limits: $1,500-$4,000 per $250,000 of additional coverage. Organizations processing high volumes of wire transfers (real estate, legal, finance) should negotiate higher sublimits and demonstrate robust procedures."
+    }
+  ],
+  "common_exclusions": [
+    {
+      "id": "EXC-001",
+      "exclusion": "War and Nation-State Attacks",
+      "description": "Most policies exclude losses attributed to acts of war, terrorism, or nation-state cyber operations. The NotPetya litigation (Merck v. Ace American Insurance) established that cyber war exclusions can void coverage even for collateral damage. Lloyd's Market Association introduced updated war exclusion clauses (LMA5567A/B) in 2023 requiring all cyber policies to include explicit state-backed attack exclusions. The exclusion scope varies significantly between policies.",
+      "risk_mitigation": "Negotiate explicit carve-outs for collateral nation-state damage. Ensure policy language uses 'hostile cyber operation' not broad 'act of war'. Consider standalone parametric coverage for nation-state risk. Review the specific war exclusion clause version (LMA5567A is broader than 5567B). Request the 'attribution' clause requiring government attribution before exclusion applies. Some carriers (Beazley, Coalition) offer more favorable war exclusion language than Lloyd's minimum.",
+      "affected_nist_controls": ["GV.RM-01", "ID.RA-01"]
+    },
+    {
+      "id": "EXC-002",
+      "exclusion": "Unpatched Known Vulnerabilities",
+      "description": "Carriers increasingly exclude or sublimit claims arising from exploitation of known vulnerabilities where patches were available but not applied within a reasonable timeframe. This is typically defined as 30 days for critical vulnerabilities and 60 days for high-severity vulnerabilities from patch availability. The MOVEit Transfer vulnerability (CVE-2023-34362) and Log4Shell generated significant claims litigation around this exclusion.",
+      "risk_mitigation": "Maintain documented patch management program with defined SLAs meeting or exceeding carrier requirements. Implement compensating controls (WAF rules, network isolation) for systems that cannot be patched immediately. Document all patching exceptions with risk acceptance and compensating controls. Monitor carrier advisories and remediate flagged vulnerabilities within carrier-specified timeframes. Maintain evidence of patching timelines for potential claims defense.",
+      "affected_nist_controls": ["PR.IP-12", "DE.CM-08"]
+    },
+    {
+      "id": "EXC-003",
+      "exclusion": "MFA Non-Compliance on Breached Systems",
+      "description": "If the insured represented on the application that MFA was deployed but the breached system or account lacked MFA, carriers may deny the claim based on material misrepresentation. Several carriers have successfully denied claims where MFA was listed as deployed but the specific compromised account (often a legacy or service account) was not covered. This applies retroactively to the application date.",
+      "risk_mitigation": "Ensure 100% MFA coverage before representing compliance on applications. Audit all accounts including service accounts, shared accounts, and legacy systems. If exceptions exist, disclose them on the application with compensating controls. Implement continuous MFA compliance monitoring. Conduct quarterly MFA enrollment audits. Document all MFA exceptions with risk acceptance by authorized signers.",
+      "affected_nist_controls": ["PR.AC-01", "PR.AC-07"]
+    },
+    {
+      "id": "EXC-004",
+      "exclusion": "Pre-Existing Conditions / Known but Unremediated Vulnerabilities",
+      "description": "Policies exclude losses from security incidents or vulnerabilities that the insured was aware of prior to the policy inception date. This includes ongoing breaches, known compromises under investigation, and vulnerabilities identified in security assessments that were not remediated. If an organization discovers a breach during the policy application process, coverage for that incident is excluded.",
+      "risk_mitigation": "Conduct thorough security assessments before applying for or renewing coverage. Remediate all known vulnerabilities and incidents before the policy inception date. Disclose any ongoing investigations or concerns to the carrier during the application process. Ensure penetration test findings and audit recommendations are addressed with documented remediation. Consider tail coverage on expiring policies for unknown pre-existing incidents.",
+      "affected_nist_controls": ["ID.RA-01", "RS.AN-01"]
+    },
+    {
+      "id": "EXC-005",
+      "exclusion": "Intentional Acts by Insured",
+      "description": "All policies exclude losses resulting from intentional, dishonest, fraudulent, criminal, or malicious acts by the insured organization, its directors, officers, or employees acting within scope of employment. This includes insider threats where the malicious actor was an authorized employee. The exclusion typically does not apply to rogue employees acting outside the scope of their employment, but the burden of proof can be challenging.",
+      "risk_mitigation": "Implement robust insider threat programs with user behavior analytics (UBA). Deploy DLP to detect and prevent unauthorized data exfiltration. Enforce least-privilege access and separation of duties. Implement employee offboarding procedures with immediate access revocation. Maintain audit trails of all privileged activity. Ensure employment agreements include acceptable use policies and monitoring consent. Negotiate policy language clarifying that rogue employee actions are covered.",
+      "affected_nist_controls": ["PR.AC-04", "DE.CM-01", "PR.DS-05"]
+    },
+    {
+      "id": "EXC-006",
+      "exclusion": "Regulatory Fines and Penalties",
+      "description": "Coverage for regulatory fines and penalties varies significantly by jurisdiction and policy. Many jurisdictions prohibit insurance coverage for punitive damages and regulatory penalties (New York, California). GDPR fines are generally uninsurable in the EU. HIPAA penalties may be partially coverable depending on the state. PCI DSS fines and assessments are typically covered under a separate insuring agreement. SEC penalties for cyber disclosure failures are generally excluded.",
+      "risk_mitigation": "Review policy language carefully for regulatory coverage scope and jurisdictional limitations. Negotiate broadest available regulatory coverage including defense costs for regulatory proceedings. Purchase separate regulatory liability coverage if primary cyber policy has restrictive language. Ensure PCI DSS assessment coverage is included if processing card data. Maintain compliance documentation to mitigate regulatory exposure. Budget for potential uninsurable penalties as a retained risk. Consider domiciling coverage in jurisdictions with favorable insurability laws.",
+      "affected_nist_controls": ["GV.OC-01", "GV.OC-03"]
+    },
+    {
+      "id": "EXC-007",
+      "exclusion": "Failure to Maintain Minimum Security Standards",
+      "description": "Policies may include a 'minimum security standards' condition requiring the insured to maintain the security posture represented on the application throughout the policy period. If the insured degrades security controls after binding (e.g., discontinuing EDR, reducing backup frequency, eliminating MFA), the carrier may deny claims arising from the degradation. Some carriers (Coalition, Corvus) perform continuous external monitoring and may issue mid-term notifications.",
+      "risk_mitigation": "Treat the insurance application as a binding commitment to maintain stated controls. Implement change management procedures that evaluate insurance implications before security changes. Monitor all controls represented on the application for continued compliance. If a control must be temporarily reduced, notify the carrier and document compensating controls. Assign ownership for maintaining insurance compliance to the CISO or risk manager. Review application representations annually and update the carrier on any material changes.",
+      "affected_nist_controls": ["GV.RM-01", "GV.OV-01"]
+    },
+    {
+      "id": "EXC-008",
+      "exclusion": "Social Engineering / Voluntary Parting of Funds",
+      "description": "Traditional cyber policies exclude losses from voluntary parting of funds, meaning situations where an authorized employee willingly transfers money based on fraudulent instructions (BEC, invoice fraud, CEO fraud). Coverage for social engineering is typically available as a separate insuring agreement with sublimits significantly lower than the policy aggregate. Standard sublimits range from $100,000 to $500,000, compared to policy aggregates of $1M-$10M.",
+      "risk_mitigation": "Purchase the highest available social engineering sublimit. Implement robust callback verification procedures for all payment changes. Deploy email security controls specifically targeting BEC (impersonation protection, lookalike domain detection). Train finance teams specifically on social engineering tactics with regular simulated exercises. Implement dual authorization for all transfers above defined thresholds. Consider separate crime/fidelity coverage to supplement social engineering sublimits. Negotiate removal of the 'voluntary parting' exclusion from the base policy where possible.",
+      "affected_nist_controls": ["PR.AT-01", "PR.IP-09"]
+    },
+    {
+      "id": "EXC-009",
+      "exclusion": "Infrastructure Failure (Power Grid, ISP, Cloud Provider Outage)",
+      "description": "Most cyber policies exclude business interruption losses caused by failure of infrastructure not owned or operated by the insured. This includes power grid failures, internet service provider outages, and cloud service provider outages (AWS, Azure, GCP). Some carriers offer 'systems failure' or 'dependent systems' extensions but typically with sublimits and extended waiting periods (12-24 hours). The 2024 CrowdStrike outage tested these exclusions extensively.",
+      "risk_mitigation": "Review policy language for systems failure and dependent business interruption coverage. Purchase the broadest available infrastructure failure extension. Negotiate reduced waiting periods (8 hours vs. 24 hours) for dependent systems coverage. Implement multi-cloud and multi-region redundancy for critical applications. Maintain ISP redundancy with automatic failover. Develop manual business continuity procedures for infrastructure outages. Quantify infrastructure dependency risk to determine appropriate sublimit levels. Typical dependent BI sublimits: $250,000-$1M for mid-market accounts.",
+      "affected_nist_controls": ["RC.RP-01", "PR.IR-01"]
+    },
+    {
+      "id": "EXC-010",
+      "exclusion": "Cryptocurrency and Digital Asset Losses",
+      "description": "Most standard cyber policies exclude losses of cryptocurrency, digital assets, NFTs, and blockchain-based assets. This includes theft from wallets, exchange compromises, smart contract exploits, and private key theft. The volatile and often unrecoverable nature of crypto assets makes them difficult to underwrite. Some specialty markets (Evertas, Breach Insurance) offer dedicated crypto coverage, but premiums are significantly higher (3-5% of asset value annually versus 0.5-1.5% for traditional cyber).",
+      "risk_mitigation": "Obtain specialized digital asset insurance if holding significant crypto positions. Implement hardware security modules (HSMs) for private key storage. Use multi-signature wallets requiring multiple approvals for transactions. Implement cold storage for assets not actively traded. Deploy smart contract audit programs before deployment. Maintain comprehensive transaction logging. Disclose digital asset holdings to cyber carrier even if excluded, as non-disclosure could affect other coverages. Budget for specialized coverage at 3-5% of digital asset value annually.",
+      "affected_nist_controls": ["PR.DS-01", "PR.AC-04"]
+    }
+  ]
+}

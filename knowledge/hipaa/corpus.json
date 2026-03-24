@@ -1,0 +1,648 @@
+{
+  "framework": "HIPAA Security Rule",
+  "version": "45 CFR Part 164 Subpart C",
+  "source": "U.S. Department of Health and Human Services",
+  "last_updated": "2026-03-24",
+  "total_specifications": 42,
+  "specifications": [
+    {
+      "id": "HIPAA-SEC-001",
+      "title": "Risk Analysis",
+      "cfr_section": "45 CFR §164.308(a)(1)(ii)(A)",
+      "safeguard_type": "Administrative",
+      "standard": "Security Management Process",
+      "nist_mapping": ["GV.RM-01", "GV.RM-02", "ID.RA-01", "ID.RA-02", "ID.RA-03"],
+      "required_or_addressable": "Required",
+      "description": "Conduct an accurate and thorough assessment of the potential risks and vulnerabilities to the confidentiality, integrity, and availability of electronic protected health information (ePHI) held by the covered entity or business associate. The risk analysis must identify all information systems that create, receive, maintain, or transmit ePHI, document reasonably anticipated threats and vulnerabilities, assess current security measures, and determine the likelihood and impact of threat occurrence.",
+      "implementation_guidance": "Inventory all systems containing ePHI including EHR systems, billing platforms, email servers, mobile devices, and cloud services. Use a structured methodology such as NIST SP 800-30 to identify threats (e.g., malware, insider threats, natural disasters), vulnerabilities (e.g., unpatched software, weak passwords), and calculate risk levels. Document findings in a risk register and prioritize remediation. For small practices, HHS provides a free Security Risk Assessment Tool. Reassess at least annually and whenever significant changes occur to systems, operations, or the threat environment.",
+      "breach_notification_relevance": "A thorough risk analysis is the foundation of breach prevention. Organizations that fail to conduct risk analyses are more likely to experience breaches and face increased penalties. The risk analysis also informs the four-factor breach risk assessment required under §164.402 to determine whether a security incident constitutes a reportable breach."
+    },
+    {
+      "id": "HIPAA-SEC-002",
+      "title": "Risk Management",
+      "cfr_section": "45 CFR §164.308(a)(1)(ii)(B)",
+      "safeguard_type": "Administrative",
+      "standard": "Security Management Process",
+      "nist_mapping": ["GV.RM-03", "GV.RM-04", "ID.RA-04", "ID.RA-05", "ID.RA-06"],
+      "required_or_addressable": "Required",
+      "description": "Implement security measures sufficient to reduce risks and vulnerabilities to a reasonable and appropriate level to comply with §164.306(a). This requires the covered entity to take action on the risks identified during the risk analysis by implementing measures to mitigate identified risks to ePHI.",
+      "implementation_guidance": "Develop a risk management plan that addresses each risk identified in the risk analysis. Prioritize remediation based on risk severity and available resources. Implement a combination of administrative, physical, and technical safeguards appropriate to the organization's size, complexity, and risk profile. Track remediation progress and document all decisions, including the rationale for accepting any residual risk. Small practices should focus on high-impact, low-cost controls first such as encryption, access controls, and staff training.",
+      "breach_notification_relevance": "Effective risk management directly reduces the probability and impact of breaches. Documented risk management activities demonstrate due diligence, which can be a mitigating factor in OCR enforcement actions following a breach."
+    },
+    {
+      "id": "HIPAA-SEC-003",
+      "title": "Sanction Policy",
+      "cfr_section": "45 CFR §164.308(a)(1)(ii)(C)",
+      "safeguard_type": "Administrative",
+      "standard": "Security Management Process",
+      "nist_mapping": ["GV.OC-01", "GV.RR-01"],
+      "required_or_addressable": "Required",
+      "description": "Apply appropriate sanctions against workforce members who fail to comply with the security policies and procedures of the covered entity or business associate. The sanction policy must be applied consistently and proportionally to the severity of the violation.",
+      "implementation_guidance": "Develop a written sanction policy that defines levels of violations and corresponding disciplinary actions ranging from verbal warnings to termination. Integrate the policy into employee handbooks and ensure all workforce members acknowledge it in writing. Apply sanctions consistently regardless of role or seniority. Document all sanction events. Include examples of violations such as unauthorized access to ePHI, sharing passwords, failure to report security incidents, or circumventing security controls. Coordinate with HR and legal counsel on implementation.",
+      "breach_notification_relevance": "A strong sanction policy deters workforce members from actions that could cause breaches. Following a breach, the sanction policy guides appropriate disciplinary response against involved workforce members and demonstrates organizational accountability to OCR investigators."
+    },
+    {
+      "id": "HIPAA-SEC-004",
+      "title": "Information System Activity Review",
+      "cfr_section": "45 CFR §164.308(a)(1)(ii)(D)",
+      "safeguard_type": "Administrative",
+      "standard": "Security Management Process",
+      "nist_mapping": ["DE.CM-01", "DE.CM-03", "DE.CM-09", "DE.AE-02", "DE.AE-03"],
+      "required_or_addressable": "Required",
+      "description": "Implement procedures to regularly review records of information system activity, such as audit logs, access reports, and security incident tracking reports. The review must be performed on a regular basis as determined by the organization's risk analysis.",
+      "implementation_guidance": "Establish a schedule for reviewing audit logs, access reports, and security incident reports. At minimum, review access logs weekly for small practices and daily for larger organizations. Look for anomalies such as access outside business hours, excessive failed login attempts, access to records without a treatment relationship, and bulk data exports. Use automated tools where possible to flag suspicious activity. Assign specific individuals responsibility for conducting reviews and document all review activities and findings. EHR systems typically include built-in audit reporting capabilities.",
+      "breach_notification_relevance": "Regular activity review is critical for early breach detection. Under the Breach Notification Rule, the discovery clock starts when a breach is known or should have been known through reasonable diligence. Organizations that fail to review logs may be deemed to have discovered a breach earlier than they actually detected it, shortening their notification timeline."
+    },
+    {
+      "id": "HIPAA-SEC-005",
+      "title": "Assigned Security Responsibility",
+      "cfr_section": "45 CFR §164.308(a)(2)",
+      "safeguard_type": "Administrative",
+      "standard": "Assigned Security Responsibility",
+      "nist_mapping": ["GV.RR-01", "GV.RR-02", "GV.OC-03"],
+      "required_or_addressable": "Required",
+      "description": "Identify the security official who is responsible for the development and implementation of the policies and procedures required by the Security Rule for the covered entity or business associate. This individual serves as the HIPAA Security Officer.",
+      "implementation_guidance": "Formally designate a HIPAA Security Officer in writing. In small practices, this may be the practice manager, office administrator, or a physician who takes on this role alongside other duties. The designation should be documented and communicated to the entire workforce. The Security Officer should have sufficient authority, knowledge, and resources to oversee the security program. Consider providing HIPAA security training or certification for the designated individual. The role may be outsourced to a qualified consultant but the covered entity retains ultimate responsibility.",
+      "breach_notification_relevance": "The Security Officer is typically the point person for breach response coordination. They are responsible for initiating the breach risk assessment, coordinating notification activities, and serving as the contact for HHS investigations. Having a clearly designated officer ensures rapid and organized breach response."
+    },
+    {
+      "id": "HIPAA-SEC-006",
+      "title": "Authorization and/or Supervision",
+      "cfr_section": "45 CFR §164.308(a)(3)(ii)(A)",
+      "safeguard_type": "Administrative",
+      "standard": "Workforce Security",
+      "nist_mapping": ["PR.AA-01", "PR.AA-03", "PR.AA-05"],
+      "required_or_addressable": "Addressable",
+      "description": "Implement procedures for the authorization and/or supervision of workforce members who work with electronic protected health information or in locations where it might be accessed. Ensure that workforce members have appropriate access to ePHI based on their role and responsibilities.",
+      "implementation_guidance": "Define access levels based on job roles and the minimum necessary standard. Create a matrix mapping job titles to specific ePHI access permissions. Implement supervisory procedures for workforce members during the initial period of employment and for those with elevated access. Require written authorization from management before granting ePHI access. For small practices, the practice manager should approve all access requests and periodically observe how staff members interact with ePHI systems.",
+      "breach_notification_relevance": "Proper authorization and supervision reduce the risk of unauthorized access that could constitute a breach. Documented authorization procedures help establish whether access was authorized or unauthorized during a breach investigation."
+    },
+    {
+      "id": "HIPAA-SEC-007",
+      "title": "Workforce Clearance Procedure",
+      "cfr_section": "45 CFR §164.308(a)(3)(ii)(B)",
+      "safeguard_type": "Administrative",
+      "standard": "Workforce Security",
+      "nist_mapping": ["PR.AA-01", "PR.AA-03", "GV.RR-03"],
+      "required_or_addressable": "Addressable",
+      "description": "Implement procedures to determine that the access of a workforce member to electronic protected health information is appropriate. This involves screening workforce members before granting access to ePHI to verify they should have such access based on their role.",
+      "implementation_guidance": "Conduct background checks appropriate to the level of ePHI access. At minimum, verify identity, check references, and review employment history. For roles with broad access to ePHI, consider criminal background checks and credit checks where legally permitted. Document the clearance process and retain records. Re-evaluate clearance when workforce members change roles. Small practices should at minimum verify credentials and references and establish a probationary period before granting full system access.",
+      "breach_notification_relevance": "Workforce clearance procedures help prevent breaches by screening out individuals who may pose a risk to ePHI security. When investigating a breach involving a workforce member, clearance documentation helps establish whether proper vetting was performed."
+    },
+    {
+      "id": "HIPAA-SEC-008",
+      "title": "Termination Procedures",
+      "cfr_section": "45 CFR §164.308(a)(3)(ii)(C)",
+      "safeguard_type": "Administrative",
+      "standard": "Workforce Security",
+      "nist_mapping": ["PR.AA-01", "PR.AA-05", "PR.AA-06"],
+      "required_or_addressable": "Addressable",
+      "description": "Implement procedures for terminating access to electronic protected health information when the employment of, or other arrangement with, a workforce member ends or as required by determinations made as specified in the workforce clearance procedure.",
+      "implementation_guidance": "Develop a termination checklist that includes: immediate deactivation of all system accounts, collection of access badges and keys, recovery of organization-owned devices, removal of remote access capabilities, changing shared passwords the individual knew, and revoking VPN and cloud service access. For involuntary terminations, coordinate with IT to disable access simultaneously with the termination meeting. Maintain termination records including dates access was revoked. Small practices should designate a responsible person for each termination step and verify completion.",
+      "breach_notification_relevance": "Failure to promptly terminate access is a common cause of breaches. Former workforce members retaining access can lead to unauthorized access or data theft. Prompt termination procedures are critical evidence that the organization took reasonable steps to protect ePHI."
+    },
+    {
+      "id": "HIPAA-SEC-009",
+      "title": "Isolating Healthcare Clearinghouse Functions",
+      "cfr_section": "45 CFR §164.308(a)(4)(ii)(A)",
+      "safeguard_type": "Administrative",
+      "standard": "Information Access Management",
+      "nist_mapping": ["PR.AA-05", "PR.DS-01", "PR.IR-01"],
+      "required_or_addressable": "Required",
+      "description": "If a healthcare clearinghouse is part of a larger organization, the clearinghouse must implement policies and procedures that protect the electronic protected health information of the clearinghouse from unauthorized access by the larger organization.",
+      "implementation_guidance": "This specification applies only to healthcare clearinghouses that are part of larger organizations. Implement network segmentation to isolate clearinghouse systems from the parent organization's network. Use separate authentication systems or, at minimum, ensure that parent organization credentials do not grant access to clearinghouse ePHI. Implement firewall rules restricting traffic between the clearinghouse and parent organization segments. Conduct regular access reviews to verify isolation is maintained. Most small-to-medium healthcare providers are not clearinghouses and this specification does not apply to them directly.",
+      "breach_notification_relevance": "Proper isolation prevents breaches that could result from the larger organization's systems being compromised and pivoting to clearinghouse ePHI. If isolation fails, a breach affecting the larger organization could expand to include clearinghouse ePHI, significantly increasing breach scope and notification obligations."
+    },
+    {
+      "id": "HIPAA-SEC-010",
+      "title": "Access Authorization",
+      "cfr_section": "45 CFR §164.308(a)(4)(ii)(B)",
+      "safeguard_type": "Administrative",
+      "standard": "Information Access Management",
+      "nist_mapping": ["PR.AA-01", "PR.AA-03", "PR.AA-05"],
+      "required_or_addressable": "Addressable",
+      "description": "Implement policies and procedures for granting access to electronic protected health information, for example, through access to a workstation, transaction, program, process, or other mechanism. Access authorization policies must be consistent with the minimum necessary standard.",
+      "implementation_guidance": "Establish a formal access request and approval process. Define role-based access control (RBAC) profiles that align with job functions and enforce the minimum necessary standard. Create an access request form that requires the requestor's name, role, specific systems and data needed, business justification, and supervisor approval. Maintain an access authorization log. Review and update RBAC profiles at least annually. For small practices, the Security Officer or practice manager should approve all access requests and maintain a simple spreadsheet tracking who has access to what.",
+      "breach_notification_relevance": "Proper access authorization ensures that only individuals with a legitimate need can access ePHI, reducing the attack surface. During breach investigations, access authorization records help determine the scope of potential exposure and identify which individuals had authorized versus unauthorized access."
+    },
+    {
+      "id": "HIPAA-SEC-011",
+      "title": "Access Establishment and Modification",
+      "cfr_section": "45 CFR §164.308(a)(4)(ii)(C)",
+      "safeguard_type": "Administrative",
+      "standard": "Information Access Management",
+      "nist_mapping": ["PR.AA-01", "PR.AA-03", "PR.AA-05", "PR.AA-06"],
+      "required_or_addressable": "Addressable",
+      "description": "Implement policies and procedures that, based upon the covered entity's or business associate's access authorization policies, establish, document, review, and modify a user's right of access to a workstation, transaction, program, or process.",
+      "implementation_guidance": "Document procedures for creating new user accounts, modifying existing access, and conducting periodic access reviews. Implement a workflow requiring approval before changes are made. When workforce members change roles, promptly adjust their access to reflect new responsibilities and remove access no longer needed. Conduct access reviews at least quarterly. Maintain a record of all access changes including the date, the change made, who approved it, and who implemented it. Use EHR system administrative functions to manage user roles and regularly audit the user list against current workforce rosters.",
+      "breach_notification_relevance": "Unmanaged access rights accumulation (privilege creep) increases the risk and potential scope of breaches. Regular access reviews and timely modification of rights help contain potential breaches by ensuring users only have access to the minimum ePHI necessary for their current role."
+    },
+    {
+      "id": "HIPAA-SEC-012",
+      "title": "Security Reminders",
+      "cfr_section": "45 CFR §164.308(a)(5)(ii)(A)",
+      "safeguard_type": "Administrative",
+      "standard": "Security Awareness and Training",
+      "nist_mapping": ["GV.AT-01", "GV.AT-02"],
+      "required_or_addressable": "Addressable",
+      "description": "Implement periodic security updates and reminders to the workforce regarding security policies and procedures, emerging threats, and best practices for protecting electronic protected health information.",
+      "implementation_guidance": "Send regular security reminders via email, newsletters, posted notices, or brief team meeting discussions. Topics should include phishing awareness, password hygiene, physical security, social engineering, and current threats targeting healthcare. Frequency should be at least monthly, with additional reminders when specific threats emerge. Keep reminders brief, relevant, and actionable. Use real-world examples of healthcare breaches to illustrate consequences. Small practices can incorporate security topics into regular staff meetings and post security tips in common areas near workstations.",
+      "breach_notification_relevance": "Regular security reminders maintain workforce vigilance against phishing and social engineering, which are leading causes of healthcare breaches. A documented security awareness program demonstrates the organization's proactive approach to breach prevention in OCR investigations."
+    },
+    {
+      "id": "HIPAA-SEC-013",
+      "title": "Protection from Malicious Software",
+      "cfr_section": "45 CFR §164.308(a)(5)(ii)(B)",
+      "safeguard_type": "Administrative",
+      "standard": "Security Awareness and Training",
+      "nist_mapping": ["PR.DS-01", "DE.CM-01", "DE.CM-09", "GV.AT-01"],
+      "required_or_addressable": "Addressable",
+      "description": "Implement procedures for guarding against, detecting, and reporting malicious software. This includes training workforce members to recognize and avoid malicious software threats such as viruses, ransomware, and spyware.",
+      "implementation_guidance": "Deploy enterprise-grade antivirus and anti-malware solutions on all endpoints that access ePHI. Enable automatic updates for virus definitions. Implement email filtering to block known malicious attachments and links. Train workforce members to recognize phishing emails, suspicious attachments, and unsafe websites. Establish a procedure for reporting suspected malware incidents. Consider endpoint detection and response (EDR) solutions for enhanced protection. Small practices should at minimum install reputable antivirus software on all computers, keep it updated, and train staff not to open suspicious emails or click unknown links.",
+      "breach_notification_relevance": "Ransomware and malware attacks are among the most common causes of healthcare breaches. HHS has issued guidance that ransomware incidents are presumed to be breaches requiring notification unless the organization can demonstrate a low probability that ePHI was compromised. Effective malware protection is a primary defense against reportable breach events."
+    },
+    {
+      "id": "HIPAA-SEC-014",
+      "title": "Log-in Monitoring",
+      "cfr_section": "45 CFR §164.308(a)(5)(ii)(C)",
+      "safeguard_type": "Administrative",
+      "standard": "Security Awareness and Training",
+      "nist_mapping": ["DE.CM-01", "DE.CM-09", "DE.AE-02", "DE.AE-03"],
+      "required_or_addressable": "Addressable",
+      "description": "Implement procedures for monitoring log-in attempts and reporting discrepancies. This includes tracking successful and failed log-in attempts to systems containing ePHI.",
+      "implementation_guidance": "Configure systems to log all authentication attempts, both successful and failed. Set up alerts for multiple failed login attempts (account lockout after 3-5 failed attempts is recommended). Monitor for logins at unusual times, from unusual locations, or from multiple locations simultaneously. Review login reports regularly as part of the information system activity review. Investigate all anomalies promptly. For small practices, enable failed login notifications in the EHR system and review login reports at least weekly. Consider implementing multi-factor authentication to reduce the risk from compromised credentials.",
+      "breach_notification_relevance": "Login monitoring enables early detection of unauthorized access attempts and credential compromise. Rapid detection of suspicious login activity can prevent a security incident from escalating into a reportable breach by enabling timely intervention."
+    },
+    {
+      "id": "HIPAA-SEC-015",
+      "title": "Password Management",
+      "cfr_section": "45 CFR §164.308(a)(5)(ii)(D)",
+      "safeguard_type": "Administrative",
+      "standard": "Security Awareness and Training",
+      "nist_mapping": ["PR.AA-01", "PR.AA-03", "GV.AT-01"],
+      "required_or_addressable": "Addressable",
+      "description": "Implement procedures for creating, changing, and safeguarding passwords used to access electronic protected health information. This includes training workforce members on proper password practices.",
+      "implementation_guidance": "Establish a password policy aligned with current NIST SP 800-63B guidelines: require minimum 12-character passwords, allow passphrases, do not mandate arbitrary complexity rules or periodic rotation unless compromise is suspected, screen passwords against known compromised password lists, and prohibit password sharing. Implement multi-factor authentication (MFA) wherever possible, especially for remote access and administrative accounts. Train workforce members on using password managers and recognizing credential phishing. For small practices, enforce strong passwords in the EHR system, require MFA for remote access, and prohibit writing passwords on sticky notes or sharing credentials.",
+      "breach_notification_relevance": "Weak or compromised passwords are a leading cause of unauthorized access breaches. Implementing strong password practices and MFA significantly reduces the risk of credential-based breaches that would trigger notification obligations."
+    },
+    {
+      "id": "HIPAA-SEC-016",
+      "title": "Security Incident Response and Reporting",
+      "cfr_section": "45 CFR §164.308(a)(6)(ii)",
+      "safeguard_type": "Administrative",
+      "standard": "Security Incident Procedures",
+      "nist_mapping": ["RS.MA-01", "RS.MA-02", "RS.MA-03", "RS.MA-04", "RS.CO-02", "RS.CO-03", "DE.AE-02", "DE.AE-06"],
+      "required_or_addressable": "Required",
+      "description": "Identify and respond to suspected or known security incidents; mitigate, to the extent practicable, harmful effects of security incidents that are known to the covered entity or business associate; and document security incidents and their outcomes.",
+      "implementation_guidance": "Develop a written Security Incident Response Plan (SIRP) that defines what constitutes a security incident, establishes an incident response team, outlines containment and eradication procedures, defines communication protocols, and includes post-incident review processes. Train all workforce members to recognize and report potential security incidents to the designated contact. Maintain an incident log documenting all reported incidents, investigation findings, actions taken, and outcomes. Test the incident response plan at least annually through tabletop exercises. Small practices should have a simple incident response procedure, designate a responsible individual, and maintain an incident log.",
+      "breach_notification_relevance": "The security incident response procedure is directly linked to breach notification. When a security incident involves ePHI, the incident response process should include a breach risk assessment under §164.402 to determine whether notification is required. The 60-day notification clock begins when the incident is discovered, making rapid and effective incident response essential."
+    },
+    {
+      "id": "HIPAA-SEC-017",
+      "title": "Data Backup Plan",
+      "cfr_section": "45 CFR §164.308(a)(7)(ii)(A)",
+      "safeguard_type": "Administrative",
+      "standard": "Contingency Plan",
+      "nist_mapping": ["PR.DS-11", "RC.RP-01", "RC.RP-03"],
+      "required_or_addressable": "Required",
+      "description": "Establish and implement procedures to create and maintain retrievable exact copies of electronic protected health information. Backups must be sufficient to restore ePHI in the event of data loss.",
+      "implementation_guidance": "Implement automated daily backups of all systems containing ePHI. Follow the 3-2-1 backup rule: maintain at least 3 copies of data on 2 different media types with 1 copy stored offsite or in the cloud. Encrypt all backup media. Test backup restoration at least quarterly to verify data integrity and recoverability. Document backup procedures, schedules, and retention periods. For small practices, cloud-based EHR systems often handle backups automatically; verify this with the vendor and ensure you can export and restore data independently. For on-premises systems, implement automated backup software with offsite or cloud storage.",
+      "breach_notification_relevance": "Reliable backups are critical for recovering from ransomware attacks without paying ransom. Organizations with robust backups can restore ePHI quickly, limiting the impact of breaches. Backup failures can extend the duration and impact of breaches, potentially increasing notification obligations and harm to affected individuals."
+    },
+    {
+      "id": "HIPAA-SEC-018",
+      "title": "Disaster Recovery Plan",
+      "cfr_section": "45 CFR §164.308(a)(7)(ii)(B)",
+      "safeguard_type": "Administrative",
+      "standard": "Contingency Plan",
+      "nist_mapping": ["RC.RP-01", "RC.RP-02", "RC.RP-03", "RC.RP-04"],
+      "required_or_addressable": "Required",
+      "description": "Establish and implement as needed procedures to restore any loss of data. The disaster recovery plan must address how the organization will recover ePHI and resume normal operations following a disaster or emergency.",
+      "implementation_guidance": "Develop a written disaster recovery plan that identifies critical systems and data, defines recovery time objectives (RTO) and recovery point objectives (RPO), documents step-by-step restoration procedures, identifies responsible personnel, and includes contact information for vendors and support resources. Address various disaster scenarios including natural disasters, hardware failure, ransomware, and prolonged power outages. Test the plan at least annually. For small practices, ensure your EHR vendor has a documented disaster recovery capability and that you have procedures to operate during system downtime, including access to paper-based forms for continued patient care.",
+      "breach_notification_relevance": "A well-tested disaster recovery plan enables rapid restoration of ePHI availability following a breach or attack, limiting harm to affected individuals. During breach response, the disaster recovery plan may need to be activated to restore systems to a known-good state while preserving forensic evidence."
+    },
+    {
+      "id": "HIPAA-SEC-019",
+      "title": "Emergency Mode Operation Plan",
+      "cfr_section": "45 CFR §164.308(a)(7)(ii)(C)",
+      "safeguard_type": "Administrative",
+      "standard": "Contingency Plan",
+      "nist_mapping": ["RC.RP-01", "PR.IR-01", "PR.IR-02"],
+      "required_or_addressable": "Required",
+      "description": "Establish and implement as needed procedures to enable continuation of critical business processes for protection of the security of electronic protected health information while operating in emergency mode. Emergency mode refers to operations during and immediately after a crisis situation.",
+      "implementation_guidance": "Identify the critical business processes that must continue during an emergency, such as patient care, medication dispensing, and lab results access. Document procedures for maintaining ePHI security when normal systems are unavailable, including use of backup systems, paper-based processes, and alternative communication methods. Define criteria for declaring and exiting emergency mode. Ensure workforce members know their roles during emergency operations. Address both technical emergencies (system outages, cyberattacks) and physical emergencies (natural disasters, power failures). Small practices should maintain paper-based forms and contact lists that enable continued operations without electronic systems.",
+      "breach_notification_relevance": "During emergency mode operations, security controls may be relaxed to maintain critical operations, potentially increasing breach risk. The emergency mode operation plan should include provisions for maintaining ePHI security to the greatest extent possible and documenting any security compromises that occur during emergency operations for subsequent breach risk assessment."
+    },
+    {
+      "id": "HIPAA-SEC-020",
+      "title": "Testing and Revision Procedures",
+      "cfr_section": "45 CFR §164.308(a)(7)(ii)(D)",
+      "safeguard_type": "Administrative",
+      "standard": "Contingency Plan",
+      "nist_mapping": ["RC.RP-05", "RC.RP-06", "ID.IM-01", "ID.IM-02"],
+      "required_or_addressable": "Addressable",
+      "description": "Implement procedures for periodic testing and revision of contingency plans, including the data backup plan, disaster recovery plan, and emergency mode operation plan.",
+      "implementation_guidance": "Test contingency plans at least annually using a combination of methods: tabletop exercises to walk through scenarios, functional tests of backup restoration, and if feasible, full-scale simulations. Document test results including what worked, what failed, and lessons learned. Revise plans based on test findings, organizational changes, and evolving threats. Involve key personnel in testing, including clinical staff, IT, and management. For small practices, conduct at least an annual tabletop exercise and quarterly backup restoration test. Update plans whenever significant changes occur in systems, personnel, or facilities.",
+      "breach_notification_relevance": "Untested contingency plans may fail during an actual breach or disaster, prolonging recovery time and increasing harm to affected individuals. Regular testing ensures that when a breach occurs, the organization can respond effectively, contain the incident quickly, and meet breach notification timelines."
+    },
+    {
+      "id": "HIPAA-SEC-021",
+      "title": "Applications and Data Criticality Analysis",
+      "cfr_section": "45 CFR §164.308(a)(7)(ii)(E)",
+      "safeguard_type": "Administrative",
+      "standard": "Contingency Plan",
+      "nist_mapping": ["ID.AM-01", "ID.AM-02", "ID.AM-05", "GV.OC-04"],
+      "required_or_addressable": "Addressable",
+      "description": "Assess the relative criticality of specific applications and data in support of other contingency plan components. This analysis identifies the most important systems and data to prioritize during contingency operations.",
+      "implementation_guidance": "Create an inventory of all applications and data repositories that contain or process ePHI. Classify each by criticality level (critical, important, non-essential) based on their impact on patient care and operations if unavailable. Assign recovery priorities and timeframes aligned with the disaster recovery plan. Document dependencies between systems. Update the analysis whenever new systems are implemented or existing systems change significantly. For small practices, focus on the EHR system, billing system, and any diagnostic or imaging systems as primary critical assets, and document which systems must be restored first.",
+      "breach_notification_relevance": "Criticality analysis helps organizations prioritize breach response and recovery efforts on the most sensitive and important ePHI. Understanding which systems and data are most critical enables more accurate breach impact assessment and targeted notification to affected individuals."
+    },
+    {
+      "id": "HIPAA-SEC-022",
+      "title": "Evaluation",
+      "cfr_section": "45 CFR §164.308(a)(8)",
+      "safeguard_type": "Administrative",
+      "standard": "Evaluation",
+      "nist_mapping": ["ID.IM-01", "ID.IM-02", "ID.IM-03", "GV.OC-05"],
+      "required_or_addressable": "Required",
+      "description": "Perform a periodic technical and nontechnical evaluation, based initially upon the standards implemented under the Security Rule and subsequently in response to environmental or operational changes affecting the security of electronic protected health information, that establishes the extent to which a covered entity's or business associate's security policies and procedures meet the requirements of the Security Rule.",
+      "implementation_guidance": "Conduct comprehensive security evaluations at least annually and whenever significant changes occur to systems, policies, or the regulatory environment. Evaluations should include both technical assessments (vulnerability scans, penetration tests, configuration reviews) and nontechnical assessments (policy reviews, procedure audits, compliance gap analyses). Use the evaluation to update the risk analysis and risk management plan. Consider engaging an independent third party for objectivity. Document evaluation findings, recommendations, and remediation timelines. Small practices should at minimum conduct an annual self-assessment using the HHS Security Risk Assessment Tool and address identified gaps.",
+      "breach_notification_relevance": "Regular evaluations identify security gaps before they lead to breaches. Post-breach, evaluation history demonstrates whether the organization maintained a reasonable security posture. Organizations that fail to conduct regular evaluations may face enhanced penalties following a breach investigation."
+    },
+    {
+      "id": "HIPAA-SEC-023",
+      "title": "Business Associate Contracts and Other Arrangements",
+      "cfr_section": "45 CFR §164.308(b)(1)",
+      "safeguard_type": "Administrative",
+      "standard": "Business Associate Contracts and Other Arrangements",
+      "nist_mapping": ["GV.SC-01", "GV.SC-02", "GV.SC-03", "GV.SC-06", "GV.SC-07"],
+      "required_or_addressable": "Required",
+      "description": "A covered entity may permit a business associate to create, receive, maintain, or transmit electronic protected health information on the covered entity's behalf only if the covered entity obtains satisfactory assurances, in accordance with §164.314(a), that the business associate will appropriately safeguard the information. The covered entity must document the satisfactory assurances through a written contract or other arrangement with the business associate.",
+      "implementation_guidance": "Identify all business associates who create, receive, maintain, or transmit ePHI on your behalf, including EHR vendors, cloud service providers, billing companies, IT service providers, shredding companies, and consultants. Execute a Business Associate Agreement (BAA) with each that includes required provisions under §164.314(a)(2): permitted uses and disclosures, required safeguards, reporting obligations for breaches and security incidents, subcontractor requirements, and termination provisions. Maintain a registry of all business associates and BAAs with review dates. Review BAAs at least annually and update when relationships change. Use HHS-provided sample BAA language as a starting point.",
+      "breach_notification_relevance": "Business associates are independently responsible for breach notification under HITECH. BAAs must require business associates to report breaches within a specified timeframe (commonly 30 days or less). The covered entity is ultimately responsible for notifying affected individuals, even when the breach occurs at the business associate. Proper BAAs ensure the covered entity is notified promptly to meet the 60-day notification deadline."
+    },
+    {
+      "id": "HIPAA-SEC-024",
+      "title": "Contingency Operations",
+      "cfr_section": "45 CFR §164.310(a)(2)(i)",
+      "safeguard_type": "Physical",
+      "standard": "Facility Access Controls",
+      "nist_mapping": ["PR.IR-01", "PR.IR-02", "RC.RP-01"],
+      "required_or_addressable": "Addressable",
+      "description": "Establish and implement as needed procedures that allow facility access in support of restoration of lost data under the disaster recovery plan and emergency mode operations plan in the event of an emergency.",
+      "implementation_guidance": "Document procedures for accessing facilities during emergencies when normal access mechanisms may be unavailable. Identify who has authority to grant emergency facility access. Maintain an emergency access list of personnel authorized to enter the facility during contingency operations. Ensure backup access methods exist (e.g., physical key overrides for electronic locks). Coordinate with building management and local emergency services. For small practices, ensure that key personnel have physical keys or access codes that function independently of electronic systems, and maintain current emergency contact lists.",
+      "breach_notification_relevance": "During emergency facility access, physical security controls may be bypassed, potentially exposing ePHI stored on workstations, servers, or physical media within the facility. Document all emergency access events to support breach risk assessment if ePHI exposure is suspected."
+    },
+    {
+      "id": "HIPAA-SEC-025",
+      "title": "Facility Security Plan",
+      "cfr_section": "45 CFR §164.310(a)(2)(ii)",
+      "safeguard_type": "Physical",
+      "standard": "Facility Access Controls",
+      "nist_mapping": ["PR.AA-02", "PR.IR-01", "DE.CM-02"],
+      "required_or_addressable": "Addressable",
+      "description": "Implement policies and procedures to safeguard the facility and the equipment therein from unauthorized physical access, tampering, and theft.",
+      "implementation_guidance": "Conduct a physical security assessment of all facilities where ePHI is accessed, stored, or transmitted. Implement layered physical security controls including: locked exterior doors, visitor sign-in procedures, badge or key card access to sensitive areas, security cameras in high-risk areas, alarm systems, and secure storage for servers and network equipment. Restrict access to server rooms and wiring closets. Address after-hours security including cleaning crew access to areas with ePHI. For small practices, ensure the office has adequate locks, restrict access to the server or workstation area, position monitors away from patient view, and implement clean desk policies.",
+      "breach_notification_relevance": "Physical security failures such as burglary or unauthorized facility access can result in theft of devices containing ePHI, triggering breach notification obligations. A comprehensive facility security plan reduces the likelihood of physical breaches and demonstrates reasonable safeguards to OCR investigators."
+    },
+    {
+      "id": "HIPAA-SEC-026",
+      "title": "Access Control and Validation Procedures",
+      "cfr_section": "45 CFR §164.310(a)(2)(iii)",
+      "safeguard_type": "Physical",
+      "standard": "Facility Access Controls",
+      "nist_mapping": ["PR.AA-02", "PR.AA-03", "DE.CM-02"],
+      "required_or_addressable": "Addressable",
+      "description": "Implement procedures to control and validate a person's access to facilities based on their role or function, including visitor control and control of access to software programs for testing and revision.",
+      "implementation_guidance": "Implement role-based physical access controls that limit facility access based on job function. Visitors, including vendors and contractors, should sign in, receive identification badges, and be escorted in areas where ePHI is accessible. Maintain visitor logs that record name, organization, purpose, entry and exit times, and escort. Implement access levels for different facility areas (e.g., public waiting area, clinical area, server room). Validate access periodically by reviewing badge access logs and comparing against current workforce rosters. For small practices, maintain a visitor log at the front desk and restrict access to areas with ePHI-containing systems.",
+      "breach_notification_relevance": "Visitor access control failures can lead to unauthorized individuals accessing areas with ePHI. Visitor logs provide valuable evidence during breach investigations to identify who had physical access during the relevant timeframe."
+    },
+    {
+      "id": "HIPAA-SEC-027",
+      "title": "Maintenance Records",
+      "cfr_section": "45 CFR §164.310(a)(2)(iv)",
+      "safeguard_type": "Physical",
+      "standard": "Facility Access Controls",
+      "nist_mapping": ["PR.MA-01", "PR.MA-02", "ID.AM-01"],
+      "required_or_addressable": "Addressable",
+      "description": "Implement policies and procedures to document repairs and modifications to the physical components of a facility which are related to security, such as hardware, walls, doors, and locks.",
+      "implementation_guidance": "Maintain records of all physical security-related maintenance activities including installation, repair, and modification of locks, doors, access control systems, surveillance cameras, alarm systems, and server room environmental controls. Records should include the date, description of work performed, who performed it, who authorized it, and any impact on security controls during the maintenance. Track maintenance of hardware that contains or protects ePHI. For small practices, keep a maintenance log for security-related changes such as lock replacements, alarm system updates, and server room maintenance.",
+      "breach_notification_relevance": "Maintenance records document the state of physical security controls over time, which can be relevant during breach investigations. If a physical breach occurs, maintenance records help determine whether security controls were functioning properly at the time of the incident."
+    },
+    {
+      "id": "HIPAA-SEC-028",
+      "title": "Workstation Use",
+      "cfr_section": "45 CFR §164.310(b)",
+      "safeguard_type": "Physical",
+      "standard": "Workstation Use",
+      "nist_mapping": ["PR.AA-05", "PR.DS-01", "GV.AT-01"],
+      "required_or_addressable": "Required",
+      "description": "Implement policies and procedures that specify the proper functions to be performed, the manner in which those functions are to be performed, and the physical attributes of the surroundings of a specific workstation or class of workstation that can access electronic protected health information.",
+      "implementation_guidance": "Define acceptable use policies for all workstations (including desktops, laptops, tablets, and smartphones) that access ePHI. Specify: permitted uses and applications, prohibited activities (personal use, unauthorized software), physical environment requirements (screen positioning to prevent unauthorized viewing, clean desk requirements), automatic lock and logoff settings, and remote work requirements. Address the use of personal devices if permitted under a BYOD policy. Position monitors in clinical areas to minimize patient visibility. Implement privacy screens where appropriate. For small practices, create a simple one-page workstation use policy and post reminders near workstations.",
+      "breach_notification_relevance": "Improper workstation use, such as accessing ePHI on unsecured personal devices or in public locations, is a common source of breaches. Clear workstation use policies and training reduce these risks and demonstrate organizational diligence in breach investigations."
+    },
+    {
+      "id": "HIPAA-SEC-029",
+      "title": "Workstation Security",
+      "cfr_section": "45 CFR §164.310(c)",
+      "safeguard_type": "Physical",
+      "standard": "Workstation Security",
+      "nist_mapping": ["PR.AA-02", "PR.DS-01", "PR.IR-01"],
+      "required_or_addressable": "Required",
+      "description": "Implement physical safeguards for all workstations that access electronic protected health information, to restrict access to authorized users. Physical safeguards must protect workstations from unauthorized access and theft.",
+      "implementation_guidance": "Implement physical security measures for all workstations including: cable locks for laptops, locked offices or workstation areas, automatic screen locks after brief inactivity (15 minutes maximum), privacy screens in areas visible to unauthorized individuals, secure storage for portable devices when not in use, and anti-theft devices for high-value equipment. For remote workstations, require a dedicated workspace and physical security measures at the remote location. Secure server room workstations with locked racks and restricted access. For small practices, use cable locks on laptops, enable screen savers with password protection, and store portable devices in locked drawers or cabinets after hours.",
+      "breach_notification_relevance": "Theft of unsecured workstations containing unencrypted ePHI is one of the most common types of reported breaches. Physical workstation security directly prevents this category of breach. If a workstation is stolen but the ePHI was encrypted, the breach safe harbor may apply."
+    },
+    {
+      "id": "HIPAA-SEC-030",
+      "title": "Device and Media Disposal",
+      "cfr_section": "45 CFR §164.310(d)(2)(i)",
+      "safeguard_type": "Physical",
+      "standard": "Device and Media Controls",
+      "nist_mapping": ["PR.DS-09", "PR.DS-10"],
+      "required_or_addressable": "Required",
+      "description": "Implement policies and procedures to address the final disposition of electronic protected health information and/or the hardware or electronic media on which it is stored. ePHI must be rendered unreadable, indecipherable, and unreconstructable prior to disposal.",
+      "implementation_guidance": "Establish procedures for sanitizing or destroying all electronic media and devices before disposal, including hard drives, USB drives, CDs/DVDs, backup tapes, copier hard drives, and mobile devices. Use NIST SP 800-88 guidelines for media sanitization: clear (overwrite), purge (degauss or cryptographic erase), or destroy (shred, disintegrate, incinerate). For hard drives and SSDs, use certified data destruction software or physical destruction. Maintain disposal records including the device type, serial number, sanitization method, date, and responsible individual. For small practices, contract with a certified electronics recycling or shredding company and obtain certificates of destruction.",
+      "breach_notification_relevance": "Improper disposal of devices containing ePHI has resulted in numerous reported breaches and significant OCR penalties. If ePHI is properly destroyed, any subsequent loss of the physical media does not constitute a breach because the PHI is unrecoverable. Destruction certificates provide evidence of proper disposal."
+    },
+    {
+      "id": "HIPAA-SEC-031",
+      "title": "Media Re-use",
+      "cfr_section": "45 CFR §164.310(d)(2)(ii)",
+      "safeguard_type": "Physical",
+      "standard": "Device and Media Controls",
+      "nist_mapping": ["PR.DS-09", "PR.DS-10"],
+      "required_or_addressable": "Required",
+      "description": "Implement procedures for removal of electronic protected health information from electronic media before the media are made available for re-use. All ePHI must be removed from media before it is repurposed for a different use or user.",
+      "implementation_guidance": "Before re-using any electronic media (hard drives, USB drives, laptops, mobile devices), remove all ePHI using appropriate sanitization methods as defined in NIST SP 800-88. For hard drives, perform a full disk wipe using certified software rather than simply deleting files or formatting. For SSDs, use manufacturer-provided secure erase commands or cryptographic erase. For mobile devices, perform a factory reset and remove all accounts. Document the sanitization process for each item including the method used, verification results, date, and responsible individual. Verify sanitization was successful before releasing media for re-use.",
+      "breach_notification_relevance": "Failure to properly sanitize media before re-use can expose ePHI to unauthorized individuals, constituting a breach. This is particularly relevant when returning leased equipment, reassigning devices between staff members, or donating old equipment."
+    },
+    {
+      "id": "HIPAA-SEC-032",
+      "title": "Device and Media Accountability",
+      "cfr_section": "45 CFR §164.310(d)(2)(iii)",
+      "safeguard_type": "Physical",
+      "standard": "Device and Media Controls",
+      "nist_mapping": ["ID.AM-01", "ID.AM-02", "PR.DS-01"],
+      "required_or_addressable": "Addressable",
+      "description": "Maintain a record of the movements of hardware and electronic media and any person responsible therefore. This includes tracking devices and media that contain ePHI as they move within and outside the organization.",
+      "implementation_guidance": "Create and maintain an inventory of all hardware and electronic media that contain or could contain ePHI. Track device assignments to specific individuals, locations, and purposes. Record all movements including transfers between personnel, offsite transport, maintenance shipments, and end-of-life dispositions. Use asset tags or labels for physical tracking. For portable devices and media, implement a check-out and check-in process. Conduct periodic physical inventory counts and reconcile against records. For small practices, maintain a simple spreadsheet listing all devices with serial numbers, assigned users, locations, and status (active, stored, disposed). Update whenever devices move.",
+      "breach_notification_relevance": "Accurate device tracking enables rapid identification of the scope and content of a breach when a device is lost or stolen. Without accountability records, the organization may be unable to determine what ePHI was on a missing device, potentially requiring notification for worst-case scenario exposure."
+    },
+    {
+      "id": "HIPAA-SEC-033",
+      "title": "Data Backup and Storage",
+      "cfr_section": "45 CFR §164.310(d)(2)(iv)",
+      "safeguard_type": "Physical",
+      "standard": "Device and Media Controls",
+      "nist_mapping": ["PR.DS-01", "PR.DS-11", "RC.RP-03"],
+      "required_or_addressable": "Addressable",
+      "description": "Create a retrievable, exact copy of electronic protected health information, when needed, before movement of equipment. This ensures ePHI is backed up before hardware is relocated, serviced, or decommissioned.",
+      "implementation_guidance": "Before moving, servicing, or retiring any equipment containing ePHI, create a verified backup. Establish a procedure that requires a backup and verification step before any hardware relocation, maintenance, or decommissioning. Store backup copies in a secure location with appropriate access controls and environmental protections. Verify backup integrity through test restorations. For equipment being sent for repair, remove or encrypt ePHI before shipping when possible. For small practices, back up data from any computer before sending it for service, upgrading, or replacing it, and verify the backup is complete and usable.",
+      "breach_notification_relevance": "Creating backups before moving equipment ensures ePHI availability is maintained even if equipment is lost, damaged, or compromised during transit or service. This reduces the impact of incidents involving equipment in transit, which have been the subject of reported breaches."
+    },
+    {
+      "id": "HIPAA-SEC-034",
+      "title": "Unique User Identification",
+      "cfr_section": "45 CFR §164.312(a)(2)(i)",
+      "safeguard_type": "Technical",
+      "standard": "Access Control",
+      "nist_mapping": ["PR.AA-01", "PR.AA-03", "DE.CM-01"],
+      "required_or_addressable": "Required",
+      "description": "Assign a unique name and/or number for identifying and tracking user identity. Each workforce member who accesses ePHI must have a unique user identifier to enable individual accountability and audit trail capabilities.",
+      "implementation_guidance": "Assign every workforce member a unique user ID for each system containing ePHI. Prohibit shared or generic accounts (e.g., 'front desk', 'nurse1'). User IDs should not be reassigned to other individuals. Implement procedures for managing user IDs throughout their lifecycle: creation, modification, suspension, and termination. Link unique user IDs to audit logs to enable accountability for all actions involving ePHI. For small practices, ensure the EHR system has a unique login for every staff member who accesses it, even if multiple people share a workstation. Never allow staff to use someone else's credentials.",
+      "breach_notification_relevance": "Unique user identification is essential for breach investigation. Without unique IDs, it may be impossible to determine who accessed or disclosed ePHI, making it difficult to assess breach scope, identify the responsible individual, or determine whether access was authorized. Shared accounts undermine audit capabilities and complicate breach assessment."
+    },
+    {
+      "id": "HIPAA-SEC-035",
+      "title": "Emergency Access Procedure",
+      "cfr_section": "45 CFR §164.312(a)(2)(ii)",
+      "safeguard_type": "Technical",
+      "standard": "Access Control",
+      "nist_mapping": ["PR.AA-01", "PR.AA-05", "PR.IR-01"],
+      "required_or_addressable": "Required",
+      "description": "Establish and implement as needed procedures for obtaining necessary electronic protected health information during an emergency. This provides a mechanism to access ePHI when normal access procedures are unavailable or insufficient.",
+      "implementation_guidance": "Define what constitutes an emergency warranting use of emergency access procedures (e.g., patient life-threatening situations, system failures during active care). Establish 'break the glass' procedures that allow authorized individuals to access ePHI beyond their normal permissions when clinically necessary. Log all emergency access events automatically and require post-event justification documentation. Review all emergency access events promptly to verify appropriateness. Define who has authority to invoke emergency access and under what circumstances. For small practices, ensure the EHR system supports emergency access override, configure it to log all such events, and review emergency access within 24 hours.",
+      "breach_notification_relevance": "Emergency access procedures temporarily expand access beyond normal controls, creating potential for unauthorized access. All emergency access events should be reviewed as potential security incidents. If emergency access is found to be inappropriate or unauthorized, it may constitute a breach requiring notification."
+    },
+    {
+      "id": "HIPAA-SEC-036",
+      "title": "Automatic Logoff",
+      "cfr_section": "45 CFR §164.312(a)(2)(iii)",
+      "safeguard_type": "Technical",
+      "standard": "Access Control",
+      "nist_mapping": ["PR.AA-05", "PR.DS-01"],
+      "required_or_addressable": "Addressable",
+      "description": "Implement electronic procedures that terminate an electronic session after a predetermined time of inactivity. Automatic logoff prevents unauthorized access to ePHI when a user leaves a workstation unattended.",
+      "implementation_guidance": "Configure all systems and applications containing ePHI to automatically lock or log off after a period of inactivity. For workstations in clinical areas where rapid re-access is necessary, use screen locks (requiring password, PIN, or badge tap) after 2-5 minutes of inactivity. For non-clinical workstations, implement session timeout after 10-15 minutes. For remote access sessions, use shorter timeouts (5-10 minutes). Configure EHR applications to time out independently of operating system settings. Use proximity-based solutions (badge-activated locks) in high-traffic clinical areas where frequent logon is burdensome. For small practices, configure screen savers with password protection to activate after 5-10 minutes on all workstations.",
+      "breach_notification_relevance": "Unattended, logged-in workstations are a significant breach vector. Unauthorized individuals accessing an unattended session can view, copy, or modify ePHI. Automatic logoff is a critical control that reduces the window of opportunity for unauthorized access and is frequently cited in OCR breach investigations."
+    },
+    {
+      "id": "HIPAA-SEC-037",
+      "title": "Encryption and Decryption",
+      "cfr_section": "45 CFR §164.312(a)(2)(iv)",
+      "safeguard_type": "Technical",
+      "standard": "Access Control",
+      "nist_mapping": ["PR.DS-01", "PR.DS-02"],
+      "required_or_addressable": "Addressable",
+      "description": "Implement a mechanism to encrypt and decrypt electronic protected health information. Encryption transforms ePHI into an unreadable format that can only be restored with the appropriate decryption key.",
+      "implementation_guidance": "Implement encryption for ePHI at rest on all devices including workstations, laptops, servers, mobile devices, and removable media. Use NIST-validated encryption algorithms (AES-128 or AES-256 for symmetric encryption). Enable full disk encryption on all laptops and portable devices using tools like BitLocker (Windows) or FileVault (macOS). Encrypt databases containing ePHI at the storage level. Encrypt removable media before any ePHI is stored on it. Implement key management procedures including secure key generation, storage, rotation, and destruction. For small practices, enable BitLocker on all Windows computers and FileVault on all Macs, and ensure mobile devices have device encryption enabled.",
+      "breach_notification_relevance": "Encryption is the primary mechanism for the breach notification safe harbor under §164.402(2). If ePHI is encrypted consistent with HHS guidance (NIST standards) and the encryption key is not compromised along with the data, the incident is not considered a breach and notification is not required. This makes encryption one of the most valuable controls for reducing breach notification obligations."
+    },
+    {
+      "id": "HIPAA-SEC-038",
+      "title": "Audit Controls",
+      "cfr_section": "45 CFR §164.312(b)",
+      "safeguard_type": "Technical",
+      "standard": "Audit Controls",
+      "nist_mapping": ["DE.CM-01", "DE.CM-03", "DE.CM-09", "DE.AE-02", "DE.AE-03"],
+      "required_or_addressable": "Required",
+      "description": "Implement hardware, software, and/or procedural mechanisms that record and examine activity in information systems that contain or use electronic protected health information. Audit controls provide the capability to monitor, record, and review system activity.",
+      "implementation_guidance": "Enable comprehensive audit logging on all systems containing ePHI. Logs should capture at minimum: user identification, date and time, type of event (login, logout, access, modification, deletion), affected data or record, and success or failure of the event. Protect audit logs from unauthorized modification or deletion by storing them in a secure, centralized location with restricted access. Retain audit logs for at least six years consistent with HIPAA retention requirements. Implement automated log analysis tools to detect anomalies. For small practices, ensure EHR audit logging is enabled (most systems have this by default), verify logs capture the required elements, and establish a regular review schedule.",
+      "breach_notification_relevance": "Audit controls are essential for detecting breaches and conducting breach risk assessments. They provide the evidence needed to determine what ePHI was accessed, by whom, when, and what actions were taken. Without adequate audit logs, breach investigations may be inconclusive, potentially requiring broader notification to affected individuals as a precautionary measure."
+    },
+    {
+      "id": "HIPAA-SEC-039",
+      "title": "Mechanism to Authenticate Electronic PHI",
+      "cfr_section": "45 CFR §164.312(c)(2)",
+      "safeguard_type": "Technical",
+      "standard": "Integrity",
+      "nist_mapping": ["PR.DS-01", "PR.DS-02", "PR.DS-06"],
+      "required_or_addressable": "Addressable",
+      "description": "Implement electronic mechanisms to corroborate that electronic protected health information has not been altered or destroyed in an unauthorized manner. Integrity controls ensure that ePHI remains accurate and complete.",
+      "implementation_guidance": "Implement integrity verification mechanisms such as checksums, hash functions, digital signatures, or error-correcting memory to detect unauthorized alterations to ePHI. Use database integrity constraints and referencing to prevent unauthorized modifications. Implement version control or change tracking in EHR systems to maintain an audit trail of all modifications to patient records. Use file integrity monitoring (FIM) tools on critical system files and databases. Verify backup integrity using checksums during backup and restoration processes. For small practices, ensure the EHR system maintains an amendment and modification history for all patient records and that database integrity checks are performed regularly by the vendor or IT support.",
+      "breach_notification_relevance": "Integrity controls help detect unauthorized modification of ePHI, which constitutes a breach. The ability to verify that ePHI has not been altered is critical during breach investigations to determine whether data integrity was compromised in addition to confidentiality. Integrity verification of backups ensures clean restoration following a breach."
+    },
+    {
+      "id": "HIPAA-SEC-040",
+      "title": "Person or Entity Authentication",
+      "cfr_section": "45 CFR §164.312(d)",
+      "safeguard_type": "Technical",
+      "standard": "Person or Entity Authentication",
+      "nist_mapping": ["PR.AA-01", "PR.AA-03"],
+      "required_or_addressable": "Required",
+      "description": "Implement procedures to verify that a person or entity seeking access to electronic protected health information is the one claimed. Authentication mechanisms ensure that individuals are who they assert they are before granting access.",
+      "implementation_guidance": "Implement authentication mechanisms using one or more of the three authentication factors: something you know (password, PIN), something you have (smart card, token, mobile device), or something you are (biometric). Implement multi-factor authentication (MFA) combining at least two factors for all remote access and for access to sensitive systems. Use strong authentication protocols and avoid deprecated methods. For system-to-system authentication, use certificates, API keys, or OAuth tokens. Implement identity verification procedures for password resets and account recovery to prevent social engineering. For small practices, implement MFA for all remote EHR access and VPN connections at minimum, and use unique strong passwords for all local access.",
+      "breach_notification_relevance": "Weak authentication is a primary vector for unauthorized access breaches. Multi-factor authentication significantly reduces the risk of credential-based breaches. During breach investigations, the strength of authentication controls is a key factor in determining whether access was unauthorized and in assessing organizational culpability."
+    },
+    {
+      "id": "HIPAA-SEC-041",
+      "title": "Transmission Integrity Controls",
+      "cfr_section": "45 CFR §164.312(e)(2)(i)",
+      "safeguard_type": "Technical",
+      "standard": "Transmission Security",
+      "nist_mapping": ["PR.DS-02", "PR.DS-06"],
+      "required_or_addressable": "Addressable",
+      "description": "Implement security measures to ensure that electronically transmitted electronic protected health information is not improperly modified without detection until disposed of. Transmission integrity controls protect ePHI during electronic transmission.",
+      "implementation_guidance": "Implement integrity verification mechanisms for ePHI in transit. Use protocols that include built-in integrity checking such as TLS (which includes message authentication codes), VPN tunnels with integrity verification, and secure file transfer protocols (SFTP, FTPS). For health information exchanges, implement digital signatures on transmitted documents. Verify that email systems used for ePHI support integrity checking through encryption protocols. Configure network devices to detect and reject corrupted packets. For small practices, ensure that all web-based EHR access uses HTTPS (TLS 1.2 or higher), use encrypted email for transmitting ePHI, and verify that fax-to-email services use secure transmission protocols.",
+      "breach_notification_relevance": "Transmission integrity failures can result in intercepted or modified ePHI during transit, which may constitute a breach. Man-in-the-middle attacks that alter transmitted ePHI could impact patient safety in addition to privacy. Proper transmission integrity controls help prevent interception-based breaches."
+    },
+    {
+      "id": "HIPAA-SEC-042",
+      "title": "Transmission Encryption",
+      "cfr_section": "45 CFR §164.312(e)(2)(ii)",
+      "safeguard_type": "Technical",
+      "standard": "Transmission Security",
+      "nist_mapping": ["PR.DS-02", "PR.DS-01"],
+      "required_or_addressable": "Addressable",
+      "description": "Implement a mechanism to encrypt electronic protected health information whenever deemed appropriate. Encryption of ePHI in transit protects against interception and unauthorized access during electronic transmission.",
+      "implementation_guidance": "Encrypt all transmissions of ePHI over public networks and the internet. Use TLS 1.2 or higher for all web-based transmissions. Implement VPN tunnels for site-to-site and remote access connections. Use encrypted email solutions (S/MIME, TLS-enforced email gateways, or secure messaging platforms) for ePHI sent via email. Encrypt wireless network traffic using WPA3 or WPA2 Enterprise. Disable deprecated protocols (SSL, TLS 1.0, TLS 1.1). For health information exchanges, use transport-level and message-level encryption. For small practices, verify that your EHR uses HTTPS for all connections, use a VPN for remote access, implement an encrypted email solution for sending ePHI, and upgrade Wi-Fi to WPA3 or WPA2 with a strong passphrase.",
+      "breach_notification_relevance": "Transmission encryption is critical for the breach notification safe harbor. ePHI encrypted in transit using NIST-compliant methods is considered secured under §164.402(2), and interception does not constitute a reportable breach if the encryption is not compromised. This is particularly important for organizations that transmit ePHI over the internet, including cloud-based EHR access, telehealth, and electronic prescribing."
+    }
+  ],
+  "breach_notification": {
+    "framework_section": "45 CFR Part 164 Subpart D - Notification in the Case of Breach of Unsecured Protected Health Information",
+    "overview": "The HIPAA Breach Notification Rule requires covered entities and business associates to provide notification following a breach of unsecured protected health information (PHI). A breach is defined as the acquisition, access, use, or disclosure of PHI in a manner not permitted under the Privacy Rule which compromises the security or privacy of the PHI.",
+    "individual_notification": {
+      "cfr_section": "45 CFR §164.404",
+      "id": "HIPAA-BN-001",
+      "title": "Notification to Individuals",
+      "requirements": {
+        "timing": "Without unreasonable delay and in no case later than 60 calendar days from the discovery of the breach. The discovery date is the first day the breach is known or, by exercising reasonable diligence, would have been known to the covered entity, its workforce, or its agents (other than the person who committed the breach).",
+        "method": "Written notification by first-class mail to the last known address of the individual, or by email if the individual has agreed to electronic notice. If contact information is insufficient for 10 or more individuals, substitute notice must be provided through either a conspicuous posting on the home page of the covered entity's website for 90 days or conspicuous notice in major print or broadcast media in the affected geographic areas, including a toll-free phone number active for 90 days.",
+        "content_requirements": [
+          "A brief description of what happened, including the date of the breach and the date of discovery",
+          "A description of the types of unsecured PHI involved in the breach (e.g., full name, Social Security number, date of birth, diagnosis, treatment information)",
+          "Steps individuals should take to protect themselves from potential harm resulting from the breach",
+          "A brief description of what the covered entity is doing to investigate the breach, mitigate harm, and protect against further breaches",
+          "Contact procedures including a toll-free telephone number, email address, postal address, or website where individuals can obtain additional information"
+        ],
+        "urgent_situations": "If the breach involves PHI that could be used for identity theft or financial fraud, or if there is an imminent threat of harm, the covered entity should consider providing notification by telephone or other expedited means in addition to written notice."
+      }
+    },
+    "media_notification": {
+      "cfr_section": "45 CFR §164.406",
+      "id": "HIPAA-BN-002",
+      "title": "Notification to Media",
+      "requirements": {
+        "threshold": "If a breach affects more than 500 residents of a single state or jurisdiction",
+        "timing": "Without unreasonable delay and in no case later than 60 calendar days from the discovery of the breach",
+        "method": "Notice to prominent media outlets serving the state or jurisdiction, typically through a press release or media advisory",
+        "content": "Same content requirements as individual notification under §164.404"
+      }
+    },
+    "hhs_notification": {
+      "cfr_section": "45 CFR §164.408",
+      "id": "HIPAA-BN-003",
+      "title": "Notification to the Secretary of HHS",
+      "requirements": {
+        "large_breaches": "For breaches affecting 500 or more individuals: notify the Secretary of HHS without unreasonable delay and in no case later than 60 calendar days from the discovery of the breach by submitting a breach report through the HHS breach reporting portal (https://ocrportal.hhs.gov). These breaches are publicly posted on the HHS Breach Portal (commonly known as the 'Wall of Shame').",
+        "small_breaches": "For breaches affecting fewer than 500 individuals: maintain a log of such breaches and submit the log to the Secretary of HHS annually, no later than 60 days after the end of each calendar year in which the breaches were discovered.",
+        "submission_information": [
+          "Name and contact information for the covered entity",
+          "Name and contact information for the business associate (if applicable)",
+          "Description of the breach",
+          "Date of the breach and date of discovery",
+          "Types of PHI involved",
+          "Number of individuals affected",
+          "Description of safeguards in place at the time of the breach",
+          "Actions taken in response to the breach"
+        ]
+      }
+    },
+    "breach_risk_assessment": {
+      "title": "Four-Factor Breach Risk Assessment",
+      "cfr_section": "45 CFR §164.402(2)",
+      "description": "To determine whether a breach of unsecured PHI requires notification, covered entities must perform a risk assessment considering at least four factors. Unless the covered entity can demonstrate a low probability that PHI was compromised based on this assessment, breach notification is required.",
+      "factors": [
+        {
+          "factor_number": 1,
+          "title": "Nature and Extent of PHI Involved",
+          "description": "Assess the nature and extent of the PHI involved, including the types of identifiers and the likelihood of re-identification. Consider whether the breach involved particularly sensitive information such as Social Security numbers, financial information, clinical diagnoses, or mental health or substance abuse records. The more sensitive and identifiable the information, the higher the probability of compromise."
+        },
+        {
+          "factor_number": 2,
+          "title": "Unauthorized Person Who Used the PHI or to Whom Disclosure Was Made",
+          "description": "Evaluate who impermissibly used or received the PHI. Consider whether the unauthorized recipient is another covered entity or business associate obligated to protect PHI, whether they have the ability to use or further disclose the information, and whether the recipient had the knowledge and capability to exploit the data. A disclosure to another healthcare entity that is independently obligated to protect PHI may present lower risk than disclosure to an unknown or malicious party."
+        },
+        {
+          "factor_number": 3,
+          "title": "Whether the PHI Was Actually Acquired or Viewed",
+          "description": "Determine whether the PHI was actually acquired or viewed, or only the opportunity existed for the information to be accessed. For example, a lost encrypted laptop where logs show no access attempts presents lower risk than a confirmed unauthorized login where records were viewed and downloaded. Consider forensic evidence, audit logs, and the circumstances of the incident to make this determination."
+        },
+        {
+          "factor_number": 4,
+          "title": "Extent to Which Risk Has Been Mitigated",
+          "description": "Evaluate the extent to which the risk to the PHI has been mitigated. Consider whether the organization obtained satisfactory assurances from the unauthorized recipient that the PHI will not be further used or disclosed (e.g., a signed confidentiality agreement or attestation of destruction), whether the PHI was returned or destroyed, and whether the circumstances otherwise indicate the PHI will not be further compromised. Effective and documented mitigation steps can reduce the probability of compromise."
+        }
+      ],
+      "assessment_outcome": "If the risk assessment demonstrates a low probability that PHI was compromised based on the above factors, breach notification is not required. The covered entity must document the risk assessment and its conclusion. If the covered entity cannot demonstrate a low probability of compromise, it must provide breach notification. The covered entity may also choose to provide notification regardless of the risk assessment outcome."
+    },
+    "safe_harbor": {
+      "title": "Encryption and Destruction Safe Harbor",
+      "cfr_section": "45 CFR §164.402(2)",
+      "description": "Unsecured PHI means PHI that is not rendered unusable, unreadable, or indecipherable to unauthorized persons through the use of a technology or methodology specified by HHS guidance. If PHI is secured through approved methods, breach notification is not required even if the PHI is lost, stolen, or otherwise compromised.",
+      "encryption_standard": {
+        "description": "ePHI is considered secured if encrypted consistent with NIST Special Publication 800-111 (for data at rest) and NIST Special Publications 800-52 and 800-77 (for data in transit), or successors, as applicable.",
+        "at_rest": "Valid encryption processes for data at rest are consistent with NIST SP 800-111, Guide to Storage Encryption Technologies for End User Devices. Use AES-128 or AES-256 encryption with proper key management.",
+        "in_transit": "Valid encryption processes for data in transit are consistent with NIST SP 800-52, Guidelines for the Selection and Use of TLS Implementations, and NIST SP 800-77, Guide to IPsec VPNs. Use TLS 1.2 or higher, or IPsec VPN tunnels.",
+        "key_management": "The encryption key must not be compromised along with the encrypted PHI. If both the encrypted data and the decryption key are breached, the safe harbor does not apply. Maintain encryption keys separately from the encrypted data."
+      },
+      "destruction_standard": {
+        "description": "PHI on physical media is considered secured if the media on which it is stored or recorded has been destroyed in accordance with NIST SP 800-88, Guidelines for Media Sanitization.",
+        "paper": "Paper, film, or other hard copy media must be shredded or destroyed such that the PHI cannot be read or otherwise reconstructed. Redaction is not considered an adequate destruction method.",
+        "electronic": "Electronic media must be cleared, purged, or destroyed consistent with NIST SP 800-88 such that PHI cannot be retrieved. Methods include degaussing, cryptographic erasure, physical destruction (shredding, disintegrating, pulverizing, incinerating)."
+      }
+    },
+    "business_associate_obligations": {
+      "title": "Business Associate Breach Notification Obligations",
+      "cfr_section": "45 CFR §164.410",
+      "description": "A business associate must notify the covered entity following the discovery of a breach of unsecured PHI. The notification must be provided without unreasonable delay and in no case later than 60 days from discovery (though BAAs may specify shorter timeframes). The notification must include identification of each individual whose unsecured PHI has been or is reasonably believed to have been breached, and any other information the covered entity needs to fulfill its notification obligations. The covered entity remains responsible for providing all required notifications to individuals, HHS, and the media."
+    },
+    "penalties": {
+      "title": "Penalties for Breach Notification Failures",
+      "description": "Failure to comply with breach notification requirements can result in civil monetary penalties under the HIPAA enforcement framework.",
+      "penalty_tiers": [
+        {
+          "tier": 1,
+          "description": "Did not know and would not have known of the violation by exercising reasonable diligence",
+          "minimum_per_violation": 137,
+          "maximum_per_violation": 68928,
+          "annual_cap": 2067852
+        },
+        {
+          "tier": 2,
+          "description": "Violation due to reasonable cause and not willful neglect",
+          "minimum_per_violation": 1379,
+          "maximum_per_violation": 68928,
+          "annual_cap": 2067852
+        },
+        {
+          "tier": 3,
+          "description": "Violation due to willful neglect that is corrected within 30 days",
+          "minimum_per_violation": 13785,
+          "maximum_per_violation": 68928,
+          "annual_cap": 2067852
+        },
+        {
+          "tier": 4,
+          "description": "Violation due to willful neglect that is not corrected within 30 days",
+          "minimum_per_violation": 68928,
+          "maximum_per_violation": 2067852,
+          "annual_cap": 2067852
+        }
+      ],
+      "note": "Penalty amounts are adjusted annually for inflation. Criminal penalties under 42 USC §1320d-6 may also apply for knowing violations."
+    }
+  }
+}
