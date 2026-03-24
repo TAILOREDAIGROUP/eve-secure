@@ -186,7 +186,7 @@ function parseYAML(filePath: string): unknown {
   // For production, replace with: import yaml from 'js-yaml'; return yaml.load(content);
   try {
     // Try dynamic import of js-yaml if available
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line
     const yaml = require("js-yaml");
     return yaml.load(content);
   } catch {
