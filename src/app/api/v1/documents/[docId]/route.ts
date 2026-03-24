@@ -1,88 +1,79 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { v4 as uuidv4 } from 'uuid';
-import { DocumentSchema } from '@/lib/validation/schemas';
-
-type RouteContext = {
-  params: Promise<{ docId: string }>;
-};
+import { getSupabaseAdmin } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/v1/documents/[docId]
- * Download document (returns file or signed URL)
- * Rate limit: 60 per minute
+ * Return document metadata + pre-signed download URL
  */
 export async function GET(
   request: NextRequest,
-  context: RouteContext
+  { params }: { params: { docId: string } }
 ) {
+  const requestId = uuidv4();
+
   try {
-    // Check authentication
     const session = await auth();
     if (!session.userId) {
-      const errorId = uuidv4();
       return NextResponse.json(
-        {
-          error: 'Unauthorized',
-          message: 'Authentication required',
-          errorId,
-        },
+        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
         { status: 401 }
       );
     }
 
-    const { docId } = await context.params;
+    const db = getSupabaseAdmin();
+    const { data: user } = await db
+      .from('users')
+      .select('id, tenant_id, role')
+      .eq('clerk_id', session.userId)
+      .single();
 
-    // TODO: In production
-    // - Validate docId is valid UUID
-    // - Query from database
-    // - Verify user has access to this document
-    // - If generating, return 202 with status
-    // - If ready, return signed URL or stream file
-    // - Log download event
-
-    const doc = {
-      docId,
-      sessionId: uuidv4(),
-      docType: 'assessment_report',
-      status: 'ready' as const,
-      createdAt: new Date().toISOString(),
-      downloadUrl: 'https://example.com/docs/report.pdf',
-      size: 2500000,
-    };
-
-    const validated = DocumentSchema.parse(doc);
-
-    // Check if document is ready
-    if (validated.status === 'ready' && validated.downloadUrl) {
-      // Redirect to signed URL or return document metadata
-      return NextResponse.json({
-        ...validated,
-        downloadUrl: validated.downloadUrl,
-      });
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Forbidden', message: 'User record not found', errorId: requestId },
+        { status: 403 }
+      );
     }
 
-    if (validated.status === 'generating') {
-      return NextResponse.json(validated, { status: 202 });
+    const { docId } = params;
+
+    const { data: doc, error: docError } = await db
+      .from('generated_documents')
+      .select('*')
+      .eq('id', docId)
+      .eq('tenant_id', user.tenant_id)
+      .single();
+
+    if (docError || !doc) {
+      return NextResponse.json(
+        { error: 'Not Found', message: 'Document not found', errorId: requestId },
+        { status: 404 }
+      );
     }
 
-    const errorId = uuidv4();
-    return NextResponse.json(
-      {
-        error: 'Document Error',
-        message: 'Document generation failed',
-        errorId,
-      },
-      { status: 400 }
-    );
+    // Generate pre-signed URL placeholder (in production: use S3 getSignedUrl)
+    const presignedUrl = `https://${process.env.AWS_S3_BUCKET ?? 'eve-secure-docs'}.s3.amazonaws.com/${doc.s3_key}?X-Amz-Expires=3600`;
+
+    logger.info('Document accessed', { requestId, docId, tenantId: user.tenant_id });
+
+    return NextResponse.json({
+      id: doc.id,
+      sessionId: doc.session_id,
+      docType: doc.doc_type,
+      fileName: doc.file_name,
+      s3Key: doc.s3_key,
+      downloadUrl: presignedUrl,
+      createdAt: doc.created_at,
+    });
   } catch (error) {
-    const errorId = uuidv4();
+    logger.error('Document GET error', {
+      requestId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
     return NextResponse.json(
-      {
-        error: 'Internal Server Error',
-        message: 'An unexpected error occurred',
-        errorId,
-      },
+      { error: 'Internal Server Error', message: 'An unexpected error occurred', errorId: requestId },
       { status: 500 }
     );
   }

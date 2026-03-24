@@ -1,91 +1,173 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { v4 as uuidv4 } from 'uuid';
-import { ListResponseSchema } from '@/lib/validation/schemas';
+import { getSupabaseAdmin } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/v1/admin/tenants
- * List all tenants (super_admin only)
- * Rate limit: 20 per minute
+ * Role-based tenant list.
+ * - super_admin: all tenants with stats
+ * - tenant_admin: own tenant only
+ * - regular user: 403
  */
 export async function GET(request: NextRequest) {
+  const requestId = uuidv4();
+
   try {
-    // Check authentication
     const session = await auth();
     if (!session.userId) {
-      const errorId = uuidv4();
       return NextResponse.json(
-        {
-          error: 'Unauthorized',
-          message: 'Authentication required',
-          errorId,
-        },
+        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
         { status: 401 }
       );
     }
 
-    // TODO: In production
-    // - Check user role is 'super_admin' (from database or claims)
-    // - If not, return 403 Forbidden
-    const hasAdminRole = false; // Placeholder
-    if (!hasAdminRole) {
-      const errorId = uuidv4();
+    const db = getSupabaseAdmin();
+
+    // Resolve user and role
+    const { data: user, error: userError } = await db
+      .from('users')
+      .select('id, tenant_id, role')
+      .eq('clerk_id', session.userId)
+      .single();
+
+    if (userError || !user) {
+      logger.warn('User not found for clerk_id', { requestId, clerkId: session.userId });
       return NextResponse.json(
-        {
-          error: 'Forbidden',
-          message: 'Admin access required',
-          errorId,
-        },
+        { error: 'Forbidden', message: 'User record not found', errorId: requestId },
         { status: 403 }
       );
     }
 
+    // Regular users cannot access admin tenant list
+    if (user.role !== 'super_admin' && user.role !== 'tenant_admin') {
+      logger.warn('Insufficient role for admin/tenants', { requestId, userId: user.id, role: user.role });
+      return NextResponse.json(
+        { error: 'Forbidden', message: 'Admin access required', errorId: requestId },
+        { status: 403 }
+      );
+    }
+
+    // tenant_admin: return only their own tenant
+    if (user.role === 'tenant_admin') {
+      const { data: tenant, error: tenantError } = await db
+        .from('tenants')
+        .select('*')
+        .eq('id', user.tenant_id)
+        .single();
+
+      if (tenantError || !tenant) {
+        logger.error('Tenant not found', { requestId, tenantId: user.tenant_id });
+        return NextResponse.json(
+          { error: 'Internal Server Error', message: 'Tenant record not found', errorId: requestId },
+          { status: 500 }
+        );
+      }
+
+      // Get user count for this tenant
+      const { count: userCount } = await db
+        .from('users')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', user.tenant_id);
+
+      // Get assessment count for this tenant
+      const { count: assessmentCount } = await db
+        .from('assessment_sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', user.tenant_id);
+
+      logger.info('Tenant admin listed own tenant', { requestId, tenantId: user.tenant_id });
+
+      return NextResponse.json({
+        items: [
+          {
+            ...tenant,
+            userCount: userCount ?? 0,
+            assessmentCount: assessmentCount ?? 0,
+          },
+        ],
+        total: 1,
+        page: 1,
+        pageSize: 1,
+      });
+    }
+
+    // super_admin: list all tenants with stats
     const searchParams = request.nextUrl.searchParams;
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get('pageSize') || '20', 10)));
-    const search = searchParams.get('search');
+    const offset = (page - 1) * pageSize;
 
-    // TODO: In production
-    // - Query all tenants from database
-    // - Filter by search term if provided
-    // - Apply pagination
-    // - Include tenant stats (users, assessments, documents)
-    const tenants = [
-      {
-        tenantId: uuidv4(),
-        name: 'Acme Healthcare',
-        sector: 'healthcare',
-        createdAt: new Date().toISOString(),
-        userCount: 15,
-        assessmentCount: 3,
-      },
-      {
-        tenantId: uuidv4(),
-        name: 'Law Firm LLC',
-        sector: 'legal',
-        createdAt: new Date().toISOString(),
-        userCount: 8,
-        assessmentCount: 1,
-      },
-    ];
+    // Total tenant count
+    const { count: totalCount, error: countError } = await db
+      .from('tenants')
+      .select('id', { count: 'exact', head: true });
 
-    const response = {
-      items: tenants,
-      total: tenants.length,
+    if (countError) {
+      logger.error('Failed to count tenants', { requestId, error: countError.message });
+      return NextResponse.json(
+        { error: 'Internal Server Error', message: 'Failed to retrieve tenants', errorId: requestId },
+        { status: 500 }
+      );
+    }
+
+    // Fetch tenants page
+    const { data: tenants, error: tenantsError } = await db
+      .from('tenants')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(offset, offset + pageSize - 1);
+
+    if (tenantsError) {
+      logger.error('Failed to fetch tenants', { requestId, error: tenantsError.message });
+      return NextResponse.json(
+        { error: 'Internal Server Error', message: 'Failed to retrieve tenants', errorId: requestId },
+        { status: 500 }
+      );
+    }
+
+    // Enrich each tenant with stats
+    const enrichedTenants = await Promise.all(
+      (tenants ?? []).map(async (tenant: any) => {
+        const { count: userCount } = await db
+          .from('users')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', tenant.id);
+
+        const { count: assessmentCount } = await db
+          .from('assessment_sessions')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', tenant.id);
+
+        return {
+          ...tenant,
+          userCount: userCount ?? 0,
+          assessmentCount: assessmentCount ?? 0,
+        };
+      })
+    );
+
+    logger.info('Super admin listed tenants', {
+      requestId,
       page,
       pageSize,
-    };
+      total: totalCount,
+    });
 
-    const validated = ListResponseSchema.parse(response);
-    return NextResponse.json(validated);
+    return NextResponse.json({
+      items: enrichedTenants,
+      total: totalCount ?? 0,
+      page,
+      pageSize,
+    });
   } catch (error) {
-    const errorId = uuidv4();
+    logger.error('Unhandled error in GET /admin/tenants', {
+      requestId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
     return NextResponse.json(
-      {
-        error: 'Internal Server Error',
-        message: 'An unexpected error occurred',
-        errorId,
-      },
+      { error: 'Internal Server Error', message: 'An unexpected error occurred', errorId: requestId },
       { status: 500 }
     );
   }

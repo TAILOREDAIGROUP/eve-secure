@@ -1,100 +1,109 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { v4 as uuidv4 } from 'uuid';
-import { ListResponseSchema } from '@/lib/validation/schemas';
+import { getSupabaseAdmin } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/v1/admin/evals
- * Get evaluation results dashboard (admin only)
- * Rate limit: 20 per minute
+ * Eval dashboard data. Super-admin only.
+ * Returns template eval metrics (will be replaced by real eval runner later).
  */
 export async function GET(request: NextRequest) {
+  const requestId = uuidv4();
+
   try {
-    // Check authentication
     const session = await auth();
     if (!session.userId) {
-      const errorId = uuidv4();
       return NextResponse.json(
-        {
-          error: 'Unauthorized',
-          message: 'Authentication required',
-          errorId,
-        },
+        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
         { status: 401 }
       );
     }
 
-    // TODO: In production
-    // - Check user role is admin or higher
-    // - Query evaluation metrics from database
-    // - Calculate aggregates and trends
+    const db = getSupabaseAdmin();
 
-    const searchParams = request.nextUrl.searchParams;
-    const period = searchParams.get('period') || '7d'; // 7d, 30d, 90d
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-    const pageSize = Math.min(50, Math.max(1, parseInt(searchParams.get('pageSize') || '20', 10)));
+    const { data: user, error: userError } = await db
+      .from('users')
+      .select('id, tenant_id, role')
+      .eq('clerk_id', session.userId)
+      .single();
 
-    const evaluations = [
-      {
-        evalId: uuidv4(),
-        testName: 'Assessment Response Quality',
-        passRate: 94.2,
+    if (userError || !user) {
+      logger.warn('User not found for clerk_id', { requestId, clerkId: session.userId });
+      return NextResponse.json(
+        { error: 'Forbidden', message: 'User record not found', errorId: requestId },
+        { status: 403 }
+      );
+    }
+
+    // Super-admin only
+    if (user.role !== 'super_admin') {
+      logger.warn('Non-super_admin attempted to access evals', { requestId, userId: user.id, role: user.role });
+      return NextResponse.json(
+        { error: 'Forbidden', message: 'Super admin access required', errorId: requestId },
+        { status: 403 }
+      );
+    }
+
+    // Template eval metrics — will be replaced by real eval runner
+    const evalMetrics = {
+      generatedAt: new Date().toISOString(),
+      source: 'template',
+      accuracy: {
+        overallScore: 0.942,
+        assessmentResponseRelevance: 0.96,
+        planRecommendationSpecificity: 0.885,
+        documentContentAccuracy: 0.913,
+        complianceMappingCorrectness: 0.95,
         sampleSize: 1247,
-        timestamp: new Date().toISOString(),
-        details: {
-          relevance: 96,
-          accuracy: 92,
-          coherence: 95,
-        },
       },
-      {
-        evalId: uuidv4(),
-        testName: 'Plan Recommendation Specificity',
-        passRate: 88.5,
-        sampleSize: 423,
-        timestamp: new Date().toISOString(),
-        details: {
-          actionability: 85,
-          costEstimateAccuracy: 91,
-          priorityRanking: 89,
-        },
+      injectionDetection: {
+        overallScore: 0.987,
+        promptInjectionBlocked: 0.99,
+        indirectInjectionBlocked: 0.98,
+        jailbreakAttemptBlocked: 0.99,
+        templateInjectionBlocked: 0.985,
+        sampleSize: 500,
       },
-      {
-        evalId: uuidv4(),
-        testName: 'Document Generation Accuracy',
-        passRate: 91.3,
-        sampleSize: 156,
-        timestamp: new Date().toISOString(),
-        details: {
-          formatting: 98,
-          contentAccuracy: 89,
-          completeness: 87,
-        },
+      harmDetection: {
+        overallScore: 0.995,
+        harmfulContentBlocked: 0.998,
+        biasDetectionRate: 0.985,
+        piiLeakageBlocked: 0.999,
+        misinformationCaught: 0.975,
+        sampleSize: 800,
       },
-    ];
-
-    const response = {
-      items: evaluations,
-      total: evaluations.length,
-      page,
-      pageSize,
+      isolationTests: {
+        overallPassRate: 0.998,
+        tenantDataIsolation: 1.0,
+        crossSessionLeakage: 1.0,
+        roleEscalationBlocked: 1.0,
+        apiAuthBypass: 0.995,
+        sampleSize: 300,
+      },
       summary: {
-        overallPassRate: 91.3,
-        period,
-        trendsUp: true,
+        totalTestsRun: 2847,
+        passRate: 0.978,
+        lastRunAt: new Date(Date.now() - 86400000).toISOString(),
+        nextScheduledRun: new Date(Date.now() + 86400000).toISOString(),
+        trend: 'stable',
       },
     };
 
-    const validated = ListResponseSchema.parse(response);
-    return NextResponse.json(validated);
+    logger.info('Eval dashboard accessed', {
+      requestId,
+      userId: user.id,
+    });
+
+    return NextResponse.json(evalMetrics);
   } catch (error) {
-    const errorId = uuidv4();
+    logger.error('Unhandled error in GET /admin/evals', {
+      requestId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
     return NextResponse.json(
-      {
-        error: 'Internal Server Error',
-        message: 'An unexpected error occurred',
-        errorId,
-      },
+      { error: 'Internal Server Error', message: 'An unexpected error occurred', errorId: requestId },
       { status: 500 }
     );
   }
