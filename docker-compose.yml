@@ -1,0 +1,90 @@
+version: "3.9"
+
+services:
+  # PostgreSQL Database with pgvector extension
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: eve-secure-postgres
+    environment:
+      POSTGRES_USER: eve_secure_user
+      POSTGRES_PASSWORD: eve_secure_password_dev
+      POSTGRES_DB: eve_secure
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eve_secure_user -d eve_secure"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eve-network
+
+  # Redis Cache
+  redis:
+    image: redis:7.2-alpine
+    container_name: eve-secure-redis
+    command: redis-server --requirepass eve_secure_redis_password_dev --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eve-network
+
+  # ClamAV for file scanning
+  clamav:
+    image: clamav/clamav:latest
+    container_name: eve-secure-clamav
+    ports:
+      - "3310:3310"
+    environment:
+      FRESHCLAM_CHECKS: 24
+    volumes:
+      - clamav_data:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "clamscan", "--version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - eve-network
+
+  # LocalStack for AWS services (S3, KMS, Secrets Manager)
+  localstack:
+    image: localstack/localstack:latest
+    container_name: eve-secure-localstack
+    ports:
+      - "4566:4566"
+      - "4571:4571"
+    environment:
+      SERVICES: s3,kms,secretsmanager,cloudwatch,logs
+      DEBUG: 1
+      DATA_DIR: /tmp/localstack/data
+      LAMBDA_EXECUTOR: docker-reuse
+      DOCKER_HOST: unix:///var/run/docker.sock
+    volumes:
+      - "${TMPDIR:-/tmp}/localstack:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - ./scripts/localstack/init.sh:/docker-entrypoint-initaws.d/init.sh
+    networks:
+      - eve-network
+
+networks:
+  eve-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  clamav_data:
+    driver: local

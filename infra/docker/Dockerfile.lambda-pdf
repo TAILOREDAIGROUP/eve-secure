@@ -1,0 +1,30 @@
+# PDF Generation Lambda
+FROM node:20-alpine
+
+WORKDIR /var/task
+
+# Install build dependencies
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    cairo-dev \
+    jpeg-dev \
+    pango-dev \
+    giflib-dev
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies including React PDF libraries
+RUN npm ci --only=production && \
+    npm cache clean --force
+
+# Copy application code
+COPY src/lambda/pdf-generator ./src
+
+# Set environment for Lambda
+ENV NODE_ENV=production
+
+# Lambda handler
+CMD ["src/index.handler"]

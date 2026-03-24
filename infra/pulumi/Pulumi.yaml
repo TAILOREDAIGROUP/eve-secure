@@ -1,0 +1,19 @@
+name: eve-secure
+runtime: nodejs
+description: EVE Secure infrastructure as code
+config:
+  aws:region:
+    description: AWS region for deployment
+    default: us-east-1
+  environment:
+    description: Environment name (local, staging, production)
+    default: local
+  enableMetrics:
+    description: Enable CloudWatch metrics and dashboards
+    default: true
+  enableAlarms:
+    description: Enable CloudWatch alarms
+    default: true
+  logRetentionDays:
+    description: CloudWatch log retention in days
+    default: 30

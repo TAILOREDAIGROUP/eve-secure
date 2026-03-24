@@ -1,0 +1,40 @@
+config:
+  aws:region: us-east-1
+  environment: staging
+  enableMetrics: true
+  enableAlarms: true
+  logRetentionDays: 30
+
+# Staging environment configuration
+evesecure:
+  vpc:
+    cidr: 10.1.0.0/16
+    publicSubnets:
+      - 10.1.1.0/24
+      - 10.1.2.0/24
+    privateSubnets:
+      - 10.1.11.0/24
+      - 10.1.12.0/24
+
+  ecs:
+    desiredCount: 2
+    cpuUnit: 512
+    memoryUnit: 1024
+    containerPort: 3000
+
+  rds:
+    instanceClass: db.t3.small
+    allocatedStorage: 100
+    multiAz: false
+
+  redis:
+    nodeType: cache.t3.micro
+    numCacheClusters: 1
+
+  s3:
+    versioningEnabled: true
+    enableMfa: false
+
+  tags:
+    Environment: staging
+    ManagedBy: Pulumi

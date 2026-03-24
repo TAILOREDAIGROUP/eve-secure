@@ -1,0 +1,45 @@
+config:
+  aws:region: us-east-1
+  environment: production
+  enableMetrics: true
+  enableAlarms: true
+  logRetentionDays: 90
+
+# Production environment configuration
+evesecure:
+  vpc:
+    cidr: 10.0.0.0/16
+    publicSubnets:
+      - 10.0.1.0/24
+      - 10.0.2.0/24
+      - 10.0.3.0/24
+    privateSubnets:
+      - 10.0.11.0/24
+      - 10.0.12.0/24
+      - 10.0.13.0/24
+
+  ecs:
+    desiredCount: 3
+    cpuUnit: 1024
+    memoryUnit: 2048
+    containerPort: 3000
+
+  rds:
+    instanceClass: db.r6i.xlarge
+    allocatedStorage: 500
+    multiAz: true
+    backupRetentionPeriod: 30
+
+  redis:
+    nodeType: cache.r6g.xlarge
+    numCacheClusters: 3
+    automaticFailover: true
+
+  s3:
+    versioningEnabled: true
+    enableMfa: true
+
+  tags:
+    Environment: production
+    ManagedBy: Pulumi
+    CriticalData: true
