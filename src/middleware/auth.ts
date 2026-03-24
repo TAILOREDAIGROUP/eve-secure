@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { clerkMiddleware, auth } from '@clerk/nextjs/server';
 import { Redis } from '@upstash/redis';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 /**
  * Authentication middleware for EVE Secure API
@@ -87,7 +88,7 @@ async function isSessionDenylisted(sessionId: string): Promise<boolean> {
   } catch (error) {
     // On Redis error, fail open (allow request)
     // Log error for monitoring
-    console.error('Redis deny-list check failed:', error);
+    logger.error('Redis deny-list check failed', { error: error instanceof Error ? error.message : String(error) });
     return false;
   }
 }
@@ -144,7 +145,7 @@ async function checkRateLimit(
     return { current, remaining, resetAt };
   } catch (error) {
     // On Redis error, fail open (allow request but don't count it)
-    console.error('Rate limit check failed:', error);
+    logger.error('Rate limit check failed', { error: error instanceof Error ? error.message : String(error) });
     return {
       current: 0,
       remaining: 1,

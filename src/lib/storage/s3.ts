@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import {
   S3Client,
   GetObjectCommand,
@@ -389,7 +390,7 @@ export async function getFileMetadata(s3Key: string): Promise<FileMetadata | nul
 async function triggerVirusScan(s3Key: string, tenantId: string): Promise<void> {
   // This would integrate with SNS/Lambda for async scanning
   // Placeholder for actual implementation
-  console.log(`Virus scan triggered for ${s3Key} (tenant: ${tenantId})`);
+  logger.info('Virus scan triggered', { s3Key, tenantId });
 }
 
 /**

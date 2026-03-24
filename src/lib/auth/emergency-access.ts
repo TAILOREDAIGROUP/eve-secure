@@ -1,6 +1,18 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
+
+/**
+ * Custom error for emergency auth failures
+ * Callers should catch this and return 500, not silently pass
+ */
+export class EmergencyAuthError extends Error {
+  constructor(message: string, public readonly context?: Record<string, unknown>) {
+    super(message);
+    this.name = 'EmergencyAuthError';
+  }
+}
 
 /**
  * Emergency access codes for EVE Secure
@@ -115,8 +127,16 @@ export async function validateEmergencyCode(
 
     return false;
   } catch (error) {
-    // Invalid code format or comparison error
-    return false;
+    logger.critical('Emergency code validation failed', {
+      error: error instanceof Error ? error.message : String(error),
+      userId: config.user_id,
+      tenantId: config.tenant_id,
+      severity: 'CRITICAL',
+    });
+    throw new EmergencyAuthError(
+      `Emergency code validation failed: ${error instanceof Error ? error.message : 'unknown error'}`,
+      { userId: config.user_id, tenantId: config.tenant_id }
+    );
   }
 }
 

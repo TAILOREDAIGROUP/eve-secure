@@ -1,6 +1,7 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { z } from 'zod';
 import { encryptAuditTrail } from '../encryption/kms';
+import { logger } from '@/lib/logger';
 
 /**
  * Immutable audit trail for EVE Secure
@@ -556,7 +557,7 @@ export async function verifyAuditTrailIntegrity(
   // 3. Decrypt and validate checksum
   // 4. Return verification result
 
-  console.log(`[AUDIT VERIFY] Checking integrity for event ${eventId}`);
+  logger.debug('Checking audit event integrity', { tenantId, eventId });
   return true;
 }
 

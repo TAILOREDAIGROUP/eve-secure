@@ -1,6 +1,7 @@
 import { Redis } from '@upstash/redis';
 import { Webhook } from 'svix';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 /**
  * Session invalidation for EVE Secure
@@ -175,7 +176,7 @@ export async function invalidateSessionAfterRoleChange(
       })
     );
 
-    console.log(`[SESSION INVALIDATED] User ${userId}: ${oldRole} -> ${newRole}`);
+    logger.info('Session invalidated after role change', { userId, oldRole, newRole });
   } catch (error) {
     throw new Error(
       `Failed to invalidate session on role change: ${error instanceof Error ? error.message : 'unknown error'}`
@@ -208,7 +209,7 @@ export async function invalidateTenantSessions(
       })
     );
 
-    console.log(`[TENANT SESSIONS INVALIDATED] Tenant ${tenantId}: ${reason}`);
+    logger.info('Tenant sessions invalidated', { tenantId, reason });
   } catch (error) {
     throw new Error(
       `Failed to invalidate tenant sessions: ${error instanceof Error ? error.message : 'unknown error'}`
@@ -230,7 +231,7 @@ export async function isUserDenylisted(userId: string): Promise<boolean> {
     return isDenied !== null;
   } catch (error) {
     // On Redis error, fail open to avoid DoS
-    console.error('User deny-list check failed:', error);
+    logger.error('User deny-list check failed', { error: error instanceof Error ? error.message : String(error) });
     return false;
   }
 }
@@ -247,7 +248,7 @@ export async function isTenantDenylisted(tenantId: string): Promise<boolean> {
     const isDenied = await redis.get(denyKey);
     return isDenied !== null;
   } catch (error) {
-    console.error('Tenant deny-list check failed:', error);
+    logger.error('Tenant deny-list check failed', { error: error instanceof Error ? error.message : String(error) });
     return false;
   }
 }
@@ -266,7 +267,7 @@ async function handleUserUpdated(event: ClerkWebhookEvent): Promise<void> {
   // Implementation depends on how roles are stored
   // This is a placeholder for integration with your role system
 
-  console.log(`[WEBHOOK] User updated: ${userId}`);
+  logger.info('Webhook: user updated', { userId });
 }
 
 /**
@@ -281,7 +282,7 @@ async function handleUserDeleted(event: ClerkWebhookEvent): Promise<void> {
 
   await invalidateUserSessions(userId, 'user_deleted');
 
-  console.log(`[WEBHOOK] User deleted and sessions invalidated: ${userId}`);
+  logger.info('Webhook: user deleted and sessions invalidated', { userId });
 }
 
 /**
@@ -308,9 +309,9 @@ async function handleSessionEnded(event: ClerkWebhookEvent): Promise<void> {
       })
     );
 
-    console.log(`[WEBHOOK] Session ended: ${sessionId} (user: ${userId})`);
+    logger.info('Webhook: session ended', { sessionId, userId });
   } catch (error) {
-    console.error(`Failed to process session.ended webhook:`, error);
+    logger.error('Failed to process session.ended webhook', { error: error instanceof Error ? error.message : String(error) });
   }
 }
 
@@ -325,7 +326,7 @@ async function handleOrgMembershipUpdated(event: ClerkWebhookEvent): Promise<voi
   const { user_id: userId, role } = event.data;
 
   // Would need to track previous role to detect changes
-  console.log(`[WEBHOOK] Organization membership updated: ${userId} (role: ${role})`);
+  logger.info('Webhook: organization membership updated', { userId, role });
 }
 
 /**
@@ -354,7 +355,7 @@ export async function processClerkWebhookEvent(event: ClerkWebhookEvent): Promis
         return _exhaustive;
     }
   } catch (error) {
-    console.error(`[WEBHOOK ERROR] Failed to process event:`, error);
+    logger.error('Webhook: failed to process event', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -371,7 +372,7 @@ export async function clearAllDenylists(): Promise<void> {
   const pattern = '*-deny:*';
 
   // Implementation placeholder
-  console.warn('[WARNING] Deny-lists would be cleared here');
+  logger.warn('Deny-lists would be cleared here');
 }
 
 /**
@@ -393,7 +394,7 @@ export async function getDenylistStats(): Promise<{
       tenantDenylistCount: 0,
     };
   } catch (error) {
-    console.error('Failed to get deny-list stats:', error);
+    logger.error('Failed to get deny-list stats', { error: error instanceof Error ? error.message : String(error) });
     return {
       userDenylistCount: 0,
       sessionDenylistCount: 0,

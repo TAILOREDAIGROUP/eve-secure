@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from '@/lib/logger';
 
 // Clerk webhook secret from environment
 const CLERK_WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET || '';
@@ -29,14 +30,14 @@ export async function POST(request: NextRequest) {
         // - Create user profile in database
         // - Initialize notification preferences
         // - Send welcome email
-        console.log(`[Webhook] New user created: ${data.id}`);
+        logger.info('Webhook: new user created', { userId: data.id });
         break;
 
       case 'user.updated':
         // Handle user profile updates
         // - Update user profile in database
         // - Sync metadata changes
-        console.log(`[Webhook] User updated: ${data.id}`);
+        logger.info('Webhook: user updated', { userId: data.id });
         break;
 
       case 'user.deleted':
@@ -45,14 +46,14 @@ export async function POST(request: NextRequest) {
         // - Archive user data (compliance)
         // - Clean up temporary files
         // - Log deletion for audit trail
-        console.log(`[Webhook] User deleted: ${data.id}`);
+        logger.info('Webhook: user deleted', { userId: data.id });
         // Invalidate all sessions for this user
         // TODO: Query and delete/invalidate sessions in database
         break;
 
       default:
         // Ignore other webhook events
-        console.log(`[Webhook] Unhandled event type: ${type}`);
+        logger.debug('Webhook: unhandled event type', { type });
     }
 
     return NextResponse.json(
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('[Webhook] Error processing Clerk webhook:', error);
+    logger.error('Error processing Clerk webhook', { error: error instanceof Error ? error.message : String(error) });
     // Always return 200 to prevent Clerk retry storms
     // Log error for investigation
     return NextResponse.json(

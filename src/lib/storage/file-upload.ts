@@ -7,6 +7,7 @@ import {
   getFileMetadata,
 } from './s3';
 import { encryptApplicationData } from '../encryption/kms';
+import { logger } from '@/lib/logger';
 
 /**
  * Secure file upload handler for EVE Secure
@@ -276,7 +277,7 @@ export async function verifyFileEncryption(
 
     return true;
   } catch (error) {
-    console.error('Encryption verification failed:', error);
+    logger.error('Encryption verification failed', { error: error instanceof Error ? error.message : String(error) });
     return false;
   }
 }
@@ -293,9 +294,7 @@ export async function initiateVirusScan(fileKey: string, tenantId: string): Prom
   // that invokes ClamAV scanning
   const scanJobId = `scan-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
-  console.log(
-    `[VIRUS SCAN] Initiated scan ${scanJobId} for ${fileKey} (tenant: ${tenantId})`
-  );
+  logger.info('Virus scan initiated', { scanJobId, fileKey, tenantId });
 
   return scanJobId;
 }
@@ -376,7 +375,7 @@ export async function isFileSafeToAccess(
 
     return true;
   } catch (error) {
-    console.error('Safety check failed:', error);
+    logger.error('File safety check failed', { error: error instanceof Error ? error.message : String(error) });
     return false;
   }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 /**
  * Security headers middleware for EVE Secure
@@ -159,8 +160,7 @@ export interface CspViolation {
  */
 export function processCspViolation(violation: CspViolation): void {
   // Log violation with details
-  console.warn('[CSP VIOLATION]', {
-    timestamp: new Date().toISOString(),
+  logger.warn('CSP violation detected', {
     documentUri: violation['document-uri'],
     violatedDirective: violation['violated-directive'],
     blockedUri: violation['blocked-uri'],
