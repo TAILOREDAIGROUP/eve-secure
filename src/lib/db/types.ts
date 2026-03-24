@@ -639,6 +639,30 @@ export interface Database {
           }
         ];
       };
+      emergency_rate_limits: {
+        Row: {
+          id: string;
+          identifier: string;
+          attempt_count: number;
+          window_start: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          identifier: string;
+          attempt_count?: number;
+          window_start?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          identifier?: string;
+          attempt_count?: number;
+          window_start?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       feature_flags: {
         Row: {
           id: string;

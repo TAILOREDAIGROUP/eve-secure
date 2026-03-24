@@ -1,138 +1,257 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
+import bcrypt from 'bcryptjs';
+import { getSupabaseAdmin } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 /**
  * POST /api/v1/auth/emergency
- * Emergency authentication via phone code (no Clerk required)
- * Public endpoint - used when Clerk is unavailable
- * Rate limit: 3 per 15 minutes per phone number
+ * Emergency authentication via one-time codes (bypasses Clerk)
+ * Rate limit: 3 attempts per 15 minutes per email
  */
+
+const EmergencyAuthSchema = z.object({
+  email: z.string().email(),
+  code: z.string().min(1).max(20),
+});
+
+const RATE_LIMIT_MAX = 3;
+const RATE_LIMIT_WINDOW_MINUTES = 15;
+
+async function checkRateLimit(identifier: string): Promise<{ allowed: boolean; remaining: number }> {
+  const db = getSupabaseAdmin();
+  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000).toISOString();
+
+  // Count attempts in current window
+  const { data, error } = await db
+    .from('emergency_rate_limits')
+    .select('attempt_count')
+    .eq('identifier', identifier)
+    .gte('window_start', windowStart)
+    .order('window_start', { ascending: false })
+    .limit(1);
+
+  if (error) {
+    logger.error('Rate limit check failed', { error: error.message });
+    // Fail open but log it
+    return { allowed: true, remaining: RATE_LIMIT_MAX };
+  }
+
+  const currentCount = data?.[0]?.attempt_count ?? 0;
+  return {
+    allowed: currentCount < RATE_LIMIT_MAX,
+    remaining: Math.max(0, RATE_LIMIT_MAX - currentCount),
+  };
+}
+
+async function recordAttempt(identifier: string): Promise<void> {
+  const db = getSupabaseAdmin();
+  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000).toISOString();
+
+  // Try to increment existing window
+  const { data: existing } = await db
+    .from('emergency_rate_limits')
+    .select('id, attempt_count')
+    .eq('identifier', identifier)
+    .gte('window_start', windowStart)
+    .order('window_start', { ascending: false })
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    await db
+      .from('emergency_rate_limits')
+      .update({ attempt_count: (existing[0]?.attempt_count ?? 0) + 1 })
+      .eq('id', existing[0]!.id);
+  } else {
+    await db
+      .from('emergency_rate_limits')
+      .insert({ identifier, attempt_count: 1, window_start: new Date().toISOString() });
+  }
+}
+
 export async function POST(request: NextRequest) {
+  const requestId = uuidv4();
+
   try {
     const body = await request.json();
-    const { action, phoneNumber, code } = body;
 
-    // Validate action
-    if (!['request', 'verify'].includes(action)) {
-      const errorId = uuidv4();
+    // Validate input
+    const parsed = EmergencyAuthSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
         {
           error: 'Validation Error',
-          message: 'action must be "request" or "verify"',
-          errorId,
+          message: parsed.error.errors.map((e) => e.message).join(', '),
+          errorId: requestId,
         },
         { status: 400 }
       );
     }
 
-    if (action === 'request') {
-      // Request verification code
-      if (!phoneNumber || !/^\+?1?\d{10}$/.test(phoneNumber)) {
-        const errorId = uuidv4();
-        return NextResponse.json(
-          {
-            error: 'Validation Error',
-            message: 'Valid phoneNumber is required',
-            errorId,
-          },
-          { status: 400 }
-        );
-      }
+    const { email, code } = parsed.data;
+    const normalizedCode = code.toUpperCase().trim();
 
-      // TODO: In production
-      // - Check rate limit: 3 requests per 15 minutes per phone
-      // - Verify phone number is associated with a tenant
-      // - Generate 6-digit code
-      // - Send via SMS (Twilio or similar)
-      // - Store code in cache with 15-minute TTL
-      // - Log request for audit trail
-
+    // Rate limit check
+    const rateLimit = await checkRateLimit(email);
+    if (!rateLimit.allowed) {
+      logger.warn('Emergency auth rate limited', { email, requestId });
       return NextResponse.json(
         {
-          status: 'code_sent',
-          message: 'Verification code sent to phone',
-          expiresIn: 900, // 15 minutes
+          error: 'Rate Limit Exceeded',
+          message: `Too many attempts. Try again in ${RATE_LIMIT_WINDOW_MINUTES} minutes.`,
+          errorId: requestId,
         },
-        { status: 200 }
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(RATE_LIMIT_WINDOW_MINUTES * 60),
+            'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
+            'X-RateLimit-Remaining': '0',
+          },
+        }
       );
     }
 
-    // Verify code
-    if (action === 'verify') {
-      if (!phoneNumber || !code) {
-        const errorId = uuidv4();
-        return NextResponse.json(
-          {
-            error: 'Validation Error',
-            message: 'phoneNumber and code are required',
-            errorId,
-          },
-          { status: 400 }
-        );
-      }
+    // Record attempt before validation
+    await recordAttempt(email);
 
-      // TODO: In production
-      // - Check rate limit: 5 failed attempts per 15 minutes = lockout
-      // - Verify code from cache
-      // - Check code hasn't expired
-      // - Find user associated with phone number
-      // - Create emergency session (limited duration, limited scope)
-      // - Delete code from cache
-      // - Log verification for audit trail
-      // - Return temporary session token
+    // Find user by email
+    const db = getSupabaseAdmin();
+    const { data: user, error: userError } = await db
+      .from('users')
+      .select('id, tenant_id, email, role')
+      .eq('email', email)
+      .limit(1)
+      .single();
 
-      const isValid = code === '123456'; // Placeholder validation
-
-      if (!isValid) {
-        const errorId = uuidv4();
-        return NextResponse.json(
-          {
-            error: 'Authentication Error',
-            message: 'Invalid or expired code',
-            errorId,
-          },
-          { status: 401 }
-        );
-      }
-
-      const sessionToken = uuidv4();
+    if (userError || !user) {
+      // Don't reveal whether email exists
       return NextResponse.json(
         {
-          status: 'authenticated',
-          sessionToken,
-          expiresIn: 3600, // 1 hour emergency access
-          scope: ['read_assessments', 'read_plans', 'read_documents'],
-          message: 'Emergency authentication successful. Token expires in 1 hour.',
+          error: 'Authentication Failed',
+          message: 'Invalid email or emergency code',
+          errorId: requestId,
         },
-        { status: 200 }
+        { status: 401 }
       );
     }
 
-    // Fallback return (should not reach here given action validation above)
+    // Get unused emergency codes for this user
+    const { data: emergencyCodes, error: codesError } = await db
+      .from('emergency_codes')
+      .select('id, code_hash, used')
+      .eq('user_id', user.id)
+      .eq('used', false);
+
+    if (codesError || !emergencyCodes || emergencyCodes.length === 0) {
+      return NextResponse.json(
+        {
+          error: 'Authentication Failed',
+          message: 'Invalid email or emergency code',
+          errorId: requestId,
+        },
+        { status: 401 }
+      );
+    }
+
+    // Check code against all unused hashes
+    let matchedCodeId: string | null = null;
+    for (const ec of emergencyCodes) {
+      const isMatch = await bcrypt.compare(normalizedCode, ec.code_hash);
+      if (isMatch) {
+        matchedCodeId = ec.id;
+        break;
+      }
+    }
+
+    if (!matchedCodeId) {
+      logger.warn('Emergency auth failed — invalid code', { email, requestId });
+      return NextResponse.json(
+        {
+          error: 'Authentication Failed',
+          message: 'Invalid email or emergency code',
+          errorId: requestId,
+        },
+        { status: 401 }
+      );
+    }
+
+    // Mark code as used immediately
+    const { error: updateError } = await db
+      .from('emergency_codes')
+      .update({ used: true, used_at: new Date().toISOString() })
+      .eq('id', matchedCodeId);
+
+    if (updateError) {
+      logger.error('Failed to invalidate emergency code', {
+        codeId: matchedCodeId,
+        error: updateError.message,
+      });
+    }
+
+    // Generate temporary session token
+    const sessionToken = uuidv4();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    // Count remaining codes
+    const remainingCodes = emergencyCodes.length - 1;
+
+    // Log to audit trail
+    await db.from('audit_events').insert({
+      tenant_id: user.tenant_id,
+      user_id: user.id,
+      event_type: 'emergency_auth_success',
+      event_data: {
+        requestId,
+        remainingCodes,
+        ip: request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown',
+      },
+    });
+
+    logger.info('Emergency auth successful', {
+      userId: user.id,
+      tenantId: user.tenant_id,
+      remainingCodes,
+      requestId,
+    });
+
     return NextResponse.json(
-      { error: 'Bad Request', message: 'Unhandled action' },
-      { status: 400 }
+      {
+        status: 'authenticated',
+        sessionToken,
+        expiresAt: expiresAt.toISOString(),
+        expiresIn: 3600,
+        scope: ['read_assessments', 'read_plans', 'read_documents'],
+        remainingCodes,
+        message:
+          remainingCodes <= 2
+            ? `Emergency authentication successful. WARNING: Only ${remainingCodes} emergency code(s) remaining. Contact your admin to regenerate.`
+            : 'Emergency authentication successful. Token expires in 1 hour.',
+      },
+      {
+        status: 200,
+        headers: {
+          'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
+          'X-RateLimit-Remaining': String(rateLimit.remaining - 1),
+        },
+      }
     );
   } catch (error) {
     if (error instanceof SyntaxError) {
-      const errorId = uuidv4();
       return NextResponse.json(
-        {
-          error: 'Validation Error',
-          message: 'Invalid JSON',
-          errorId,
-        },
+        { error: 'Validation Error', message: 'Invalid JSON', errorId: requestId },
         { status: 400 }
       );
     }
 
-    const errorId = uuidv4();
+    logger.error('Emergency auth error', {
+      error: error instanceof Error ? error.message : 'unknown',
+      requestId,
+    });
+
     return NextResponse.json(
-      {
-        error: 'Internal Server Error',
-        message: 'An unexpected error occurred',
-        errorId,
-      },
+      { error: 'Internal Server Error', message: 'An unexpected error occurred', errorId: requestId },
       { status: 500 }
     );
   }
