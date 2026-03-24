@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, AuthError } from '@/lib/auth/supabase-auth';
+import { requireAuth, AuthError } from '@/lib/auth/supabase-auth-server';
 import { ZodError } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import { OnboardingSchema } from '@/lib/validation/schemas';

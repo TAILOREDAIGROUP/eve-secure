@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, AuthError } from '@/lib/auth/supabase-auth';
+import { requireAuth, AuthError } from '@/lib/auth/supabase-auth-server';
 import { Redis } from '@upstash/redis';
 import { z } from 'zod';
 import { logger } from '@/lib/logger';

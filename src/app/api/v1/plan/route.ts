@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, AuthError } from '@/lib/auth/supabase-auth';
+import { requireAuth, AuthError } from '@/lib/auth/supabase-auth-server';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/db';

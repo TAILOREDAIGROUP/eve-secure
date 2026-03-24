@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { checkDatabaseHealth } from '@/lib/db';
-import { createServiceClient } from '@/lib/auth/supabase-auth';
+import { createServiceClient } from '@/lib/auth/supabase-auth-server';
 
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0';
 
