@@ -155,7 +155,7 @@ export interface ErrorResponse {
   errorId: string;
   message: string;
   code: string;
-  ...(statusCode >= 400 && statusCode < 500 ? {} : { support?: string });
+  support?: string;
 }
 
 /**

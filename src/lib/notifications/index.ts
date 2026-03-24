@@ -243,7 +243,6 @@ export async function notify(
           userId: recipient.userId,
           template: smsTemplate,
           messageId: result.messageId,
-          attempts: result.attempts,
         });
       } else {
         errors.push(`SMS failed: ${result.error}`);
@@ -450,5 +449,4 @@ export async function updateUserNotificationPreferences(
   }
 }
 
-// Export types for use in application
-export type { NotificationRecipient, NotificationRequest };
+// Types are already exported above via interface declarations

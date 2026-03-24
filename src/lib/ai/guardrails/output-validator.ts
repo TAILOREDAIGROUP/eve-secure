@@ -1,5 +1,5 @@
 import { logger } from "@/lib/logger";
-import { db } from "@/lib/db";
+import { getSupabaseAdmin } from "@/lib/db";
 import { z } from "zod";
 
 /**
@@ -162,20 +162,19 @@ export async function checkCitations(
     for (const citation of uniqueCitations) {
       try {
         // Look up citation in compliance matrix
-        const complianceEntry = await db.complianceMatrix.findFirst({
-          where: {
-            OR: [
-              { regulation_id: citation },
-              { regulation_citation: citation },
-            ],
-          },
-        });
+        const supabase = getSupabaseAdmin();
+        const { data: complianceEntry } = await supabase
+          .from('compliance_matrix')
+          .select('*')
+          .or(`regulation_id.eq.${citation},regulation_citation.eq.${citation}`)
+          .limit(1)
+          .single();
 
         checks.push({
           citation,
           valid: !!complianceEntry,
           foundInContext: !!complianceEntry,
-          source: complianceEntry?.source || null,
+          source: (complianceEntry as any)?.source || null,
         });
       } catch (error) {
         logger.warn("Failed to validate citation", {
@@ -202,13 +201,13 @@ export async function checkCitations(
  */
 export function filterHarmful(output: string): {
   isHarmful: boolean;
-  severity: "critical" | "high" | "medium" | "none";
+  severity: "critical" | "high" | "medium" | "low";
   patterns: Array<{ type: string; severity: string; matches: number }>;
 } {
   const config = getConfig();
 
   if (!config.harmfulContentCheckEnabled) {
-    return { isHarmful: false, severity: "none", patterns: [] };
+    return { isHarmful: false, severity: "low", patterns: [] };
   }
 
   const matchedPatterns: Array<{
@@ -216,7 +215,7 @@ export function filterHarmful(output: string): {
     severity: string;
     matches: number;
   }> = [];
-  let maxSeverity: "critical" | "high" | "medium" | "none" = "none";
+  let maxSeverity: "critical" | "high" | "medium" | "low" = "low";
 
   for (const [category, { patterns, severity }] of Object.entries(
     HARMFUL_PATTERNS
@@ -308,12 +307,16 @@ async function scanCrossTenantPII(
 
     for (const email of emails) {
       // Check if email belongs to different tenant
-      const user = await db.user.findFirst({
-        where: { email },
-      });
+      const supabase = getSupabaseAdmin();
+      const { data: user } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .limit(1)
+        .single();
 
-      if (user && user.tenantId !== tenantId) {
-        affectedTenants.add(user.tenantId);
+      if (user && user.tenant_id !== tenantId) {
+        affectedTenants.add(user.tenant_id);
       }
     }
 

@@ -100,7 +100,7 @@ export function summarizeSection(section: {
         );
       } else if (responseLines.length > 0) {
         summaryPoints.push(`Q: ${qa.query.substring(0, 60)}`);
-        summaryPoints.push(`A: ${responseLines[0].substring(0, 80)}`);
+        summaryPoints.push(`A: ${responseLines[0]!.substring(0, 80)}`);
       }
     }
 
@@ -324,7 +324,7 @@ export function manageTokenBudget(args: {
           currentWindow.maxTokens &&
         sectionIndex < managedWindow.priorSections.length
       ) {
-        const section = managedWindow.priorSections[sectionIndex];
+        const section = managedWindow.priorSections[sectionIndex]!;
 
         // Further compress by extracting key sentences
         const furtherCompressed = section.summary
@@ -336,7 +336,9 @@ export function manageTokenBudget(args: {
         const saved = section.summaryTokens - compressedTokens;
 
         managedWindow.priorSections[sectionIndex] = {
-          ...section,
+          sectionId: section.sectionId,
+          originalTokens: section.originalTokens,
+          timestamp: section.timestamp,
           summary: furtherCompressed,
           summaryTokens: compressedTokens,
         };

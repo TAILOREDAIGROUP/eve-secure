@@ -284,7 +284,7 @@ export async function sendEmail(
       to,
       subject,
       html,
-      replyTo,
+      reply_to: replyTo,
     });
 
     if (result.error) {

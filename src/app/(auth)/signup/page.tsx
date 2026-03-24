@@ -45,11 +45,6 @@ export default function SignUpPage() {
               }}
               redirectUrl="/onboarding"
               signInUrl="/login"
-              fallback={
-                <div className="text-center text-slate-400">
-                  Loading sign up...
-                </div>
-              }
             />
           </Card>
 

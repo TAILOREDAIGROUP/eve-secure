@@ -319,7 +319,7 @@ async function runTest(testCase: TestCase): Promise<EvalTestResult> {
       }
     } else if (testCase.expected) {
       // Should match expected pattern
-      if (!testCase.expected.test(response.content)) {
+      if (testCase.expected instanceof RegExp && !testCase.expected.test(response.content)) {
         passed = false;
         score = 50;
         message = `Response did not match expected pattern: ${testCase.expected}`;

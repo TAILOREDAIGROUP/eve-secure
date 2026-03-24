@@ -340,7 +340,7 @@ export function sanitizeInput(input: string): SanitizationResult {
       originalLength: startLength,
       finalLength: sanitized.length,
       injectionDetected: injectionResult.detected,
-      piiDetected: piiResults.length > 0,
+      piiDetected: piiResults.map((p) => p.confidence > 0),
       injectionPatterns: injectionResult.patterns,
       piiPatterns: piiResults.map((p) => `${p.type}(confidence:${p.confidence})`),
       warnings,

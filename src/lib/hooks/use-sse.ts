@@ -63,10 +63,10 @@ export function useSSE() {
                   const lines = buffer.split("\n");
 
                   // Keep the last incomplete line in the buffer
-                  buffer = lines[lines.length - 1];
+                  buffer = lines[lines.length - 1] ?? "";
 
                   for (let i = 0; i < lines.length - 1; i++) {
-                    const line = lines[i];
+                    const line = lines[i]!;
 
                     if (line.startsWith("data:")) {
                       const data = line.slice(5).trim();

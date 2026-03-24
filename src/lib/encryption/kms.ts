@@ -169,7 +169,7 @@ export async function decryptData(encryptedData: EncryptedData): Promise<string>
     return decrypted.toString('utf-8');
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new Error(`Invalid encrypted data format: ${error.errors[0].message}`);
+      throw new Error(`Invalid encrypted data format: ${error.errors[0]?.message}`);
     }
     throw new Error(
       `KMS decryption failed: ${error instanceof Error ? error.message : 'unknown error'}`

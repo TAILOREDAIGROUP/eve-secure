@@ -1,6 +1,22 @@
 import { clerkClient } from '@clerk/nextjs/server';
-import type { Session } from '@clerk/nextjs/server';
 import { z } from 'zod';
+
+/**
+ * Extended session type for EVE Secure
+ * Clerk v5 Session type doesn't include publicMetadata or user directly.
+ * We use a broader type to represent session-like objects that carry metadata.
+ */
+interface EVESession {
+  userId?: string;
+  publicMetadata?: Record<string, unknown>;
+  user?: {
+    primaryEmailAddress?: {
+      verification?: {
+        status?: string;
+      };
+    };
+  };
+}
 
 /**
  * Clerk integration for EVE Secure with HIPAA compliance
@@ -25,7 +41,7 @@ type SessionMetadata = z.infer<typeof SessionMetadataSchema>;
  * @returns Tenant ID as UUID
  * @throws Error if session invalid or no tenant_id
  */
-export function getTenantId(session: Session | null): string {
+export function getTenantId(session: EVESession | null): string {
   if (!session) {
     throw new Error('Unauthenticated: no active session');
   }
@@ -48,7 +64,7 @@ export function getTenantId(session: Session | null): string {
  * @throws Error if session invalid, MFA not verified, or user locked out
  */
 export function validateSession(
-  session: Session | null,
+  session: EVESession | null,
   requireMFA: boolean = true
 ): SessionMetadata {
   if (!session || !session.userId) {
@@ -97,7 +113,7 @@ export function validateSession(
  * @param session - Clerk session
  * @returns true if MFA re-verification needed
  */
-export function requireMFARefresh(session: Session | null): boolean {
+export function requireMFARefresh(session: EVESession | null): boolean {
   if (!session) return true;
 
   try {
@@ -217,7 +233,7 @@ export async function markMFAVerified(userId: string): Promise<void> {
  */
 export async function verifyClerkToken(token: string): Promise<SessionMetadata> {
   try {
-    const decoded = await clerkClient.verifyToken(token);
+    const decoded = await (clerkClient as any).verifyToken(token);
     if (!decoded.sub) {
       throw new Error('Invalid token: missing user ID');
     }

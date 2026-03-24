@@ -64,7 +64,7 @@ export default function AssessmentPage() {
   useEffect(() => {
     if (assessmentData) {
       setAssessmentData(assessmentData);
-      setSelectedSection(currentSection || assessmentData.sections[0]?.id);
+      setSelectedSection(currentSection ?? assessmentData.sections[0]?.id ?? null);
     }
   }, [assessmentData, currentSection, setAssessmentData, setCurrentSection]);
 

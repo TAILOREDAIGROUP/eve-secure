@@ -5,8 +5,8 @@ import { logger } from '../logging/logger';
  * Initialize Twilio client
  */
 const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
+  process.env.TWILIO_ACCOUNT_SID || '',
+  process.env.TWILIO_AUTH_TOKEN || ''
 );
 
 /**

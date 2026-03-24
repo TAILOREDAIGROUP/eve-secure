@@ -1,4 +1,4 @@
-import { Redis } from 'ioredis';
+import { Redis } from '@upstash/redis';
 import { logger } from '../logging/logger';
 
 /**
@@ -27,10 +27,8 @@ const CACHE_KEY_PREFIX = 'feature-flags:';
  */
 function getRedisClient(): Redis {
   return new Redis({
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    password: process.env.REDIS_PASSWORD,
-    db: parseInt(process.env.REDIS_DB || '0'),
+    url: process.env.UPSTASH_REDIS_REST_URL || '',
+    token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
   });
 }
 
@@ -72,18 +70,18 @@ export async function isFeatureEnabled(
     let flag: FeatureFlag | null = null;
 
     if (flagData) {
-      flag = JSON.parse(flagData);
+      flag = typeof flagData === 'string' ? JSON.parse(flagData) : flagData as FeatureFlag;
     } else {
       // Query from database if not in cache
       flag = await getFeatureFlagFromDB(flagId);
 
       if (flag) {
         // Cache the result
-        await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(flag));
+        await redis.set(cacheKey, JSON.stringify(flag), { ex: CACHE_TTL });
       }
     }
 
-    redis.disconnect();
+    // upstash/redis is stateless, no disconnect needed
 
     if (!flag) {
       logger.warn('Feature flag not found', { flagId });
@@ -145,8 +143,8 @@ export async function getFeatureFlags(): Promise<FeatureFlag[]> {
     // Try cache first
     let cached = await redis.get(cacheKey);
     if (cached) {
-      const flags = JSON.parse(cached);
-      redis.disconnect();
+      const flags = typeof cached === 'string' ? JSON.parse(cached) : cached;
+      // upstash/redis is stateless, no disconnect needed
       return flags;
     }
 
@@ -154,8 +152,8 @@ export async function getFeatureFlags(): Promise<FeatureFlag[]> {
     const flags = await getAllFeatureFlagsFromDB();
 
     // Cache the result
-    await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(flags));
-    redis.disconnect();
+    await redis.set(cacheKey, JSON.stringify(flags), { ex: CACHE_TTL });
+    // upstash/redis is stateless, no disconnect needed
 
     return flags;
   } catch (error) {
@@ -203,7 +201,7 @@ export async function setFeatureFlag(
       const redis = getRedisClient();
       await redis.del(`${CACHE_KEY_PREFIX}${flagId}`);
       await redis.del('feature-flags:all');
-      redis.disconnect();
+      // upstash/redis is stateless, no disconnect needed
 
       logger.info('Feature flag updated', {
         flagId,
@@ -235,7 +233,7 @@ export async function clearFeatureFlagCache(): Promise<void> {
       logger.info('Feature flag cache cleared', { keysCleared: keys.length });
     }
 
-    redis.disconnect();
+    // upstash/redis is stateless, no disconnect needed
   } catch (error) {
     logger.error('Error clearing feature flag cache', {
       error: error instanceof Error ? error.message : String(error),

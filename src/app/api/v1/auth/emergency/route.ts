@@ -107,6 +107,12 @@ export async function POST(request: NextRequest) {
         { status: 200 }
       );
     }
+
+    // Fallback return (should not reach here given action validation above)
+    return NextResponse.json(
+      { error: 'Bad Request', message: 'Unhandled action' },
+      { status: 400 }
+    );
   } catch (error) {
     if (error instanceof SyntaxError) {
       const errorId = uuidv4();

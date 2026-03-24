@@ -127,8 +127,9 @@ export function ChatInterface({
             );
             if (existingIndex >= 0) {
               const updated = [...prev];
+              const existing = updated[existingIndex]!;
               updated[existingIndex] = {
-                ...updated[existingIndex],
+                ...existing,
                 content: fullContent,
               };
               return updated;
@@ -137,11 +138,11 @@ export function ChatInterface({
                 ...prev,
                 {
                   id: assistantMessageId,
-                  role: "assistant",
+                  role: "assistant" as const,
                   content: fullContent,
                   timestamp: new Date().toISOString(),
                   isStreaming: true,
-                },
+                } satisfies Message,
               ];
             }
           });
@@ -152,7 +153,7 @@ export function ChatInterface({
       setMessages((prev) => {
         const updated = [...prev];
         const msgIndex = updated.findIndex((m) => m.id === assistantMessageId);
-        if (msgIndex >= 0) {
+        if (msgIndex >= 0 && updated[msgIndex]) {
           updated[msgIndex].isStreaming = false;
         }
         return updated;

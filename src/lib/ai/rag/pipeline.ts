@@ -1,5 +1,5 @@
 import { embedQuery } from "./embeddings";
-import { db } from "@/lib/db";
+import { getSupabaseAdmin } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 
@@ -110,30 +110,18 @@ export async function retrieveContext(
     const queryEmbedding = await embedQuery(query);
 
     // Search pgvector with cosine similarity
-    const results = await db.$queryRaw<
-      Array<{
-        id: string;
-        type: string;
-        content: string;
-        source: string;
-        similarity: number;
-        metadata: unknown;
-      }>
-    >`
-      SELECT
-        id,
-        type,
-        content,
-        source,
-        1 - (embedding <=> ${`[${queryEmbedding.join(",")}]`}::vector) as similarity,
-        metadata
-      FROM knowledge_items
-      WHERE 1 - (embedding <=> ${`[${queryEmbedding.join(",")}]`}::vector) > ${minSimilarity}
-      ORDER BY similarity DESC
-      LIMIT ${topK}
-    `;
+    const supabase = getSupabaseAdmin();
+    const { data: results, error } = await supabase.rpc('search_knowledge_documents', {
+      query_embedding: JSON.stringify(queryEmbedding),
+      match_threshold: minSimilarity,
+      match_count: topK,
+    });
 
-    const items: KnowledgeItem[] = results.map((r) => ({
+    if (error) {
+      throw new Error(`Vector search failed: ${error.message}`);
+    }
+
+    const items: KnowledgeItem[] = (results || []).map((r: any) => ({
       id: r.id,
       type: r.type as KnowledgeItem["type"],
       content: r.content,
@@ -177,27 +165,17 @@ async function regulatoryComplianceSearch(
     });
 
     // Build SQL IN clause for citations
-    const results = await db.$queryRaw<
-      Array<{
-        id: string;
-        type: string;
-        content: string;
-        source: string;
-        metadata: unknown;
-      }>
-    >`
-      SELECT
-        id,
-        type,
-        content,
-        source,
-        metadata
-      FROM compliance_matrix
-      WHERE regulation_id IN (${citations.join(",")})
-      OR regulation_citation IN (${citations.join(",")})
-    `;
+    const supabase = getSupabaseAdmin();
+    const { data: results, error } = await supabase
+      .from('compliance_matrix')
+      .select('id, type, content, source, metadata')
+      .or(`regulation_id.in.(${citations.join(",")}),regulation_citation.in.(${citations.join(",")})`);
 
-    const items: KnowledgeItem[] = results.map((r) => ({
+    if (error) {
+      throw new Error(`Compliance search failed: ${error.message}`);
+    }
+
+    const items: KnowledgeItem[] = (results || []).map((r: any) => ({
       id: r.id,
       type: r.type as KnowledgeItem["type"],
       content: r.content,
@@ -394,7 +372,7 @@ CRITICAL: You MUST base your response ONLY on the provided knowledge context. Do
     const finalPrompt = `${ragEnforcedPrompt}\n\n${contextBlock}`;
 
     // Call model via LiteLLM
-    const { callModel } = await import("./litellm");
+    const { callModel } = await import("@/lib/ai/litellm");
     const modelResult = await callModel({
       query: finalPrompt,
       systemPrompt: ragEnforcedPrompt,

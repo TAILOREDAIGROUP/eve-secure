@@ -45,11 +45,6 @@ export default function LoginPage() {
               }}
               redirectUrl="/dashboard"
               signUpUrl="/signup"
-              fallback={
-                <div className="text-center text-slate-400">
-                  Loading sign in...
-                </div>
-              }
             />
           </Card>
 

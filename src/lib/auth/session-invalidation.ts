@@ -95,7 +95,7 @@ export async function verifyClerkWebhook(
 
   try {
     const webhook = new Webhook(CLERK_WEBHOOK_SECRET);
-    const event = webhook.verify(payload, signature);
+    const event = webhook.verify(payload, signature as any);
 
     // Parse and validate event
     const parsedEvent = ClerkWebhookEventSchema.parse(event);

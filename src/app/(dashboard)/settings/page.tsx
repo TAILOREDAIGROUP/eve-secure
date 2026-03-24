@@ -52,8 +52,13 @@ export default function SettingsPage() {
     },
   });
 
-  const [notifications, setNotifications] = useState(
-    settings?.notifications || {}
+  const [notifications, setNotifications] = useState<UserSettings["notifications"]>(
+    settings?.notifications || {
+      assessmentUpdates: false,
+      securityAlerts: false,
+      weeklyDigest: false,
+      planUpdates: false,
+    }
   );
 
   const updateNotificationsMutation = useMutation({

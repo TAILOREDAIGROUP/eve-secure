@@ -65,7 +65,11 @@ async function extractAuthContext(request: NextRequest): Promise<AuthContext | n
     mfaVerified: false, // Would be checked from session metadata
   };
 
-  return AuthContextSchema.parse(context).catch(() => null);
+  try {
+    return AuthContextSchema.parse(context);
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -273,7 +277,7 @@ export function withAuth<T extends any[], R>(
     }
 
     // Rate limiting already handled by main middleware
-    return handler(authContext, ...args.slice(1));
+    return handler(authContext, ...(args.slice(1) as any as T));
   };
 }
 

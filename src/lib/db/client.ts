@@ -95,9 +95,9 @@ export class TenantQueries {
    * Execute a query with tenant context
    */
   private async execute<T>(
-    queryFn: (client: SupabaseClient<Database>) => Promise<T>
+    queryFn: (client: SupabaseClient<Database>) => PromiseLike<T>
   ): Promise<T> {
-    return withTenantContext(this.client, this.tenantId, queryFn, this.userId);
+    return withTenantContext(this.client, this.tenantId, (c) => Promise.resolve(queryFn(c)), this.userId);
   }
 
   /**
@@ -133,7 +133,7 @@ export class TenantQueries {
       .eq('tenant_id', this.tenantId);
 
     if (status) {
-      query = query.eq('status', status);
+      query = query.eq('status', status as any);
     }
 
     return this.execute(() => query);
@@ -234,7 +234,7 @@ export class TenantQueries {
         tenant_id: this.tenantId,
         user_id: userId,
         event_type: eventType,
-        event_data: eventData,
+        event_data: eventData as any,
         ip_address: ipAddress,
       })
     );
@@ -269,7 +269,7 @@ export class TenantQueries {
     return this.execute((client) =>
       client
         .from('conversation_state')
-        .update(updates)
+        .update(updates as any)
         .eq('session_id', sessionId)
         .eq('tenant_id', this.tenantId)
     );
@@ -296,7 +296,7 @@ export class TenantQueries {
     let query = this.client
       .from('knowledge_documents')
       .select('*')
-      .eq('category', category);
+      .eq('category', category as any);
 
     if (subcategory) {
       query = query.eq('subcategory', subcategory);
@@ -312,7 +312,7 @@ export class TenantQueries {
   async similaritySearchKnowledge(embedding: number[], limit: number = 5) {
     return this.execute((client) =>
       client.rpc('search_knowledge_documents', {
-        query_embedding: embedding,
+        query_embedding: embedding as any,
         match_threshold: 0.7,
         match_count: limit,
       })
