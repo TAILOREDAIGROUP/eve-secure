@@ -7,6 +7,8 @@ import { getSupabaseAdmin } from '@/lib/db';
 import { generateEmergencyAccessCodes } from '@/lib/auth/emergency-access';
 import { logger } from '@/lib/logger';
 
+export const runtime = 'edge';
+
 /**
  * POST /api/v1/onboarding
  * Create tenant, org profile, emergency codes, default notification prefs

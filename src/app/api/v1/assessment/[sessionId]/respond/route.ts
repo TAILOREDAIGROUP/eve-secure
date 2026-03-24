@@ -5,6 +5,8 @@ import { getSupabaseAdmin } from '@/lib/db';
 import { requireAuth, AuthError } from '@/lib/auth/supabase-auth-server';
 import { logger } from '@/lib/logger';
 
+export const runtime = 'edge';
+
 /**
  * NIST CSF 2.0 sections in assessment order with progress ranges.
  */

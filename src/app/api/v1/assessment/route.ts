@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from '@/lib/db';
 import { logger } from '@/lib/logger';
 
+export const runtime = 'edge';
+
 /**
  * GET /api/v1/assessment
  * List assessment sessions for the current tenant with pagination.

@@ -5,6 +5,8 @@ import { getSupabaseAdmin } from '@/lib/db';
 import { requireAuth, AuthError } from '@/lib/auth/supabase-auth-server';
 import { logger } from '@/lib/logger';
 
+export const runtime = 'edge';
+
 const IRStartSchema = z.object({
   incidentType: z.string().min(1).max(200),
   severity: z.enum(['low', 'medium', 'high', 'critical']),

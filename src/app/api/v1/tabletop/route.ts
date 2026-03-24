@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/db';
 import { logger } from '@/lib/logger';
 
+export const runtime = 'edge';
+
 /**
  * POST /api/v1/tabletop
  * Generate custom tabletop exercise from org profile + threat context

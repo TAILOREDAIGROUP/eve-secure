@@ -1,9 +1,13 @@
-import pino, { Logger as PinoLogger } from 'pino';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Structured log entry
+ * Edge-compatible structured logger for EVE Secure
+ *
+ * Replaces pino (which uses process.stdout.write / worker threads)
+ * with console-based logging that works on Cloudflare Pages edge runtime.
+ * Structured JSON output is captured by Cloudflare's log system.
  */
+
 export interface LogEntry {
   timestamp: string;
   level: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'CRITICAL';
@@ -16,9 +20,6 @@ export interface LogEntry {
   category?: string;
 }
 
-/**
- * Request-scoped logger
- */
 export interface RequestLogger {
   requestId: string;
   tenantId?: string;
@@ -30,38 +31,17 @@ export interface RequestLogger {
   critical: (message: string, metadata?: Record<string, unknown>) => void;
 }
 
-/**
- * Sensitive fields that should be redacted from logs
- */
 const SENSITIVE_PATTERNS = [
-  /password/i,
-  /token/i,
-  /secret/i,
-  /api[_-]?key/i,
-  /auth/i,
-  /credit[_-]?card/i,
-  /ssn/i,
-  /phone/i,
-  /email/i,
-  /address/i,
-  /zipcode/i,
-  /aws[_-]?secret/i,
-  /private[_-]?key/i,
+  /password/i, /token/i, /secret/i, /api[_-]?key/i, /auth/i,
+  /credit[_-]?card/i, /ssn/i, /private[_-]?key/i, /aws[_-]?secret/i,
 ];
 
-/**
- * Redact sensitive data from objects
- */
-function redactSensitiveData(obj: unknown, depth: number = 0): unknown {
+function redactSensitiveData(obj: unknown, depth = 0): unknown {
   if (depth > 10) return '[CIRCULAR]';
   if (obj === null || obj === undefined) return obj;
 
   if (typeof obj === 'string') {
-    if (
-      obj.length > 20 &&
-      /^[a-zA-Z0-9+/=]+$/.test(obj) &&
-      !obj.includes(' ')
-    ) {
+    if (obj.length > 20 && /^[a-zA-Z0-9+/=]+$/.test(obj) && !obj.includes(' ')) {
       return '[REDACTED_SECRET]';
     }
     return obj;
@@ -75,102 +55,54 @@ function redactSensitiveData(obj: unknown, depth: number = 0): unknown {
 
   const redacted: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
-    const isSensitive = SENSITIVE_PATTERNS.some((pattern) => pattern.test(key));
-    if (isSensitive) {
-      redacted[key] = '[REDACTED]';
-    } else {
-      redacted[key] = redactSensitiveData(value, depth + 1);
-    }
+    const isSensitive = SENSITIVE_PATTERNS.some((p) => p.test(key));
+    redacted[key] = isSensitive ? '[REDACTED]' : redactSensitiveData(value, depth + 1);
   }
   return redacted;
 }
 
-/**
- * Create pino logger instance — edge-compatible (no worker threads)
- *
- * NOTE: pino.transport() uses Node.js worker threads which are NOT available
- * on Cloudflare Pages/Workers. Instead we use pino's direct mode which writes
- * to stdout synchronously. Logs are captured by Cloudflare's log system and
- * can be tailed via \`wrangler tail\` or forwarded to any log drain.
- */
-function createPinoLogger(): PinoLogger {
-  const isLocal = process.env.NODE_ENV === 'development';
-
-  return pino({
-    level: isLocal ? 'debug' : 'info',
-    timestamp: pino.stdTimeFunctions.isoTime,
-    serializers: {
-      req: (req: Record<string, unknown>) => ({
-        id: req.id,
-        method: req.method,
-        url: req.url,
-        remoteAddress: req.remoteAddress,
-      }),
-      err: pino.stdSerializers.err,
-    },
-    // In production on Cloudflare, use JSON format (default).
-    // In development, use pino-pretty if available, otherwise JSON.
-    ...(isLocal
-      ? {
-          transport: {
-            target: 'pino-pretty',
-            options: { colorize: true },
-          },
-        }
-      : {}),
+function formatLog(level: string, message: string, metadata?: Record<string, unknown>): string {
+  return JSON.stringify({
+    level,
+    time: new Date().toISOString(),
+    msg: message,
+    service: 'eve-secure',
+    ...(metadata ? { metadata: redactSensitiveData(metadata) } : {}),
   });
 }
 
 /**
- * Global logger instance
- */
-let pinoLogger: PinoLogger;
-try {
-  pinoLogger = createPinoLogger();
-} catch {
-  // Fallback if pino-pretty isn't installed in dev
-  pinoLogger = pino({
-    level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
-    timestamp: pino.stdTimeFunctions.isoTime,
-  });
-}
-
-/**
- * Main logger interface with structured logging
+ * Main logger — edge-compatible (console-based, no worker threads)
  */
 export const logger = {
   debug: (message: string, metadata?: Record<string, unknown>) => {
-    pinoLogger.debug(
-      { metadata: redactSensitiveData(metadata) },
-      message
-    );
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(formatLog('DEBUG', message, metadata));
+    }
   },
   info: (message: string, metadata?: Record<string, unknown>) => {
-    pinoLogger.info(
-      { metadata: redactSensitiveData(metadata) },
-      message
-    );
+    console.log(formatLog('INFO', message, metadata));
   },
   warn: (message: string, metadata?: Record<string, unknown>) => {
-    pinoLogger.warn(
-      { metadata: redactSensitiveData(metadata) },
-      message
-    );
+    console.warn(formatLog('WARN', message, metadata));
   },
   error: (message: string, metadata?: Record<string, unknown>) => {
-    pinoLogger.error(
-      { metadata: redactSensitiveData(metadata) },
-      message
-    );
+    console.error(formatLog('ERROR', message, metadata));
   },
   critical: (message: string, metadata?: Record<string, unknown>) => {
-    pinoLogger.error(
-      { level: 'CRITICAL', metadata: redactSensitiveData(metadata) },
-      message
-    );
+    console.error(formatLog('CRITICAL', message, metadata));
   },
   child: (bindings: Record<string, unknown>) => {
-    return pinoLogger.child(bindings);
+    return {
+      debug: (obj: Record<string, unknown>, msg: string) =>
+        logger.debug(msg, { ...bindings, ...obj }),
+      info: (obj: Record<string, unknown>, msg: string) =>
+        logger.info(msg, { ...bindings, ...obj }),
+      warn: (obj: Record<string, unknown>, msg: string) =>
+        logger.warn(msg, { ...bindings, ...obj }),
+      error: (obj: Record<string, unknown>, msg: string) =>
+        logger.error(msg, { ...bindings, ...obj }),
+    };
   },
 };
 
@@ -183,29 +115,21 @@ export function createRequestLogger(
   userId?: string
 ): RequestLogger {
   const id = requestId || uuidv4();
-  const child = logger.child({ requestId: id, tenantId, userId });
+  const ctx = { requestId: id, tenantId, userId };
 
   return {
     requestId: id,
     tenantId,
     userId,
-    debug: (message: string, metadata?: Record<string, unknown>) => {
-      child.debug({ metadata: redactSensitiveData(metadata) }, message);
-    },
-    info: (message: string, metadata?: Record<string, unknown>) => {
-      child.info({ metadata: redactSensitiveData(metadata) }, message);
-    },
-    warn: (message: string, metadata?: Record<string, unknown>) => {
-      child.warn({ metadata: redactSensitiveData(metadata) }, message);
-    },
-    error: (message: string, metadata?: Record<string, unknown>) => {
-      child.error({ metadata: redactSensitiveData(metadata) }, message);
-    },
-    critical: (message: string, metadata?: Record<string, unknown>) => {
-      child.error(
-        { level: 'CRITICAL', metadata: redactSensitiveData(metadata) },
-        message
-      );
-    },
+    debug: (message: string, metadata?: Record<string, unknown>) =>
+      logger.debug(message, { ...ctx, ...metadata }),
+    info: (message: string, metadata?: Record<string, unknown>) =>
+      logger.info(message, { ...ctx, ...metadata }),
+    warn: (message: string, metadata?: Record<string, unknown>) =>
+      logger.warn(message, { ...ctx, ...metadata }),
+    error: (message: string, metadata?: Record<string, unknown>) =>
+      logger.error(message, { ...ctx, ...metadata }),
+    critical: (message: string, metadata?: Record<string, unknown>) =>
+      logger.critical(message, { ...ctx, ...metadata }),
   };
 }

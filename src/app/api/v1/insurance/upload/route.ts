@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from '@/lib/db';
 import { logger } from '@/lib/logger';
 
+export const runtime = 'edge';
+
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
 const PDF_MAGIC_BYTES = [0x25, 0x50, 0x44, 0x46]; // %PDF
 

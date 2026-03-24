@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/db';
 import { logger } from '@/lib/logger';
 
+export const runtime = 'edge';
+
 const PlanGenerateInputSchema = z.object({
   sessionId: z.string().uuid(),
 });
