@@ -1,11 +1,9 @@
 import { Redis } from '@upstash/redis';
-import { Webhook } from 'svix';
-import { z } from 'zod';
 import { logger } from '@/lib/logger';
 
 /**
  * Session invalidation for EVE Secure
- * Handles Clerk webhook events to invalidate sessions immediately
+ * Handles Supabase Auth events to invalidate sessions immediately
  * - Role changes
  * - User deletion
  * - Tenant deactivation
@@ -16,8 +14,6 @@ import { logger } from '@/lib/logger';
 
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
-const CLERK_WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
-
 let redisClient: Redis | null = null;
 
 /**
@@ -37,81 +33,9 @@ function getRedisClient(): Redis {
 }
 
 /**
- * Clerk webhook event types we handle
- */
-const ClerkWebhookEventSchema = z.discriminatedUnion('type', [
-  z.object({
-    type: z.literal('user.updated'),
-    data: z.object({
-      id: z.string(),
-      primary_email_address_id: z.string().optional(),
-      public_metadata: z.record(z.unknown()).optional(),
-      updated_at: z.number(),
-    }),
-  }),
-  z.object({
-    type: z.literal('user.deleted'),
-    data: z.object({
-      id: z.string(),
-      deleted: z.boolean(),
-    }),
-  }),
-  z.object({
-    type: z.literal('session.ended'),
-    data: z.object({
-      id: z.string(),
-      user_id: z.string(),
-      expire_at: z.number(),
-    }),
-  }),
-  z.object({
-    type: z.literal('organizationMembership.updated'),
-    data: z.object({
-      id: z.string(),
-      user_id: z.string(),
-      organization_id: z.string(),
-      role: z.string(),
-      updated_at: z.number(),
-    }),
-  }),
-]);
-
-type ClerkWebhookEvent = z.infer<typeof ClerkWebhookEventSchema>;
-
-/**
- * Verify and parse Clerk webhook
- * Uses Svix library for HMAC verification
- * @param payload - Raw request body
- * @param signature - svix-id, svix-timestamp, svix-signature headers
- * @returns Parsed webhook event
- * @throws Error if verification fails
- */
-export async function verifyClerkWebhook(
-  payload: string,
-  signature: string
-): Promise<ClerkWebhookEvent> {
-  if (!CLERK_WEBHOOK_SECRET) {
-    throw new Error('Clerk webhook secret not configured');
-  }
-
-  try {
-    const webhook = new Webhook(CLERK_WEBHOOK_SECRET);
-    const event = webhook.verify(payload, signature as any);
-
-    // Parse and validate event
-    const parsedEvent = ClerkWebhookEventSchema.parse(event);
-    return parsedEvent;
-  } catch (error) {
-    throw new Error(
-      `Webhook verification failed: ${error instanceof Error ? error.message : 'unknown error'}`
-    );
-  }
-}
-
-/**
  * Invalidate all sessions for a user
  * Called on user deletion or security events
- * @param userId - Clerk user ID
+ * @param userId - User ID
  * @param reason - Reason for invalidation
  * @returns Count of sessions invalidated
  */
@@ -129,7 +53,7 @@ export async function invalidateUserSessions(
 
     await redis.setex(
       denyKey,
-      7 * 24 * 60 * 60, // 7-day deny list (Clerk tokens max lifetime)
+      7 * 24 * 60 * 60, // 7-day deny list (Supabase Auth token max lifetime)
       JSON.stringify({
         reason,
         timestamp,
@@ -138,7 +62,7 @@ export async function invalidateUserSessions(
     );
 
     // Also invalidate all active sessions for this user
-    // In practice, would enumerate sessions from Clerk or database
+    // In practice, would enumerate sessions from database
     return 1;
   } catch (error) {
     throw new Error(
@@ -150,7 +74,7 @@ export async function invalidateUserSessions(
 /**
  * Invalidate session after role change
  * Called when user's role is updated (e.g., admin revoked)
- * @param userId - Clerk user ID
+ * @param userId - User ID
  * @param sessionId - Session ID to invalidate
  * @param oldRole - Previous role
  * @param newRole - New role
@@ -250,113 +174,6 @@ export async function isTenantDenylisted(tenantId: string): Promise<boolean> {
   } catch (error) {
     logger.error('Tenant deny-list check failed', { error: error instanceof Error ? error.message : String(error) });
     return false;
-  }
-}
-
-/**
- * Handle Clerk user.updated webhook
- * Check for role or permission changes
- * @param event - Clerk webhook event
- */
-async function handleUserUpdated(event: ClerkWebhookEvent): Promise<void> {
-  if (event.type !== 'user.updated') return;
-
-  const { id: userId, public_metadata } = event.data;
-
-  // Check if role changed in metadata
-  // Implementation depends on how roles are stored
-  // This is a placeholder for integration with your role system
-
-  logger.info('Webhook: user updated', { userId });
-}
-
-/**
- * Handle Clerk user.deleted webhook
- * Invalidate all sessions for deleted user
- * @param event - Clerk webhook event
- */
-async function handleUserDeleted(event: ClerkWebhookEvent): Promise<void> {
-  if (event.type !== 'user.deleted') return;
-
-  const { id: userId } = event.data;
-
-  await invalidateUserSessions(userId, 'user_deleted');
-
-  logger.info('Webhook: user deleted and sessions invalidated', { userId });
-}
-
-/**
- * Handle Clerk session.ended webhook
- * Add to deny-list when user explicitly logs out
- * @param event - Clerk webhook event
- */
-async function handleSessionEnded(event: ClerkWebhookEvent): Promise<void> {
-  if (event.type !== 'session.ended') return;
-
-  const { id: sessionId, user_id: userId } = event.data;
-
-  try {
-    const redis = getRedisClient();
-    const denyKey = `session-deny:${sessionId}`;
-
-    await redis.setex(
-      denyKey,
-      24 * 60 * 60,
-      JSON.stringify({
-        reason: 'session_ended',
-        timestamp: Date.now(),
-        userId,
-      })
-    );
-
-    logger.info('Webhook: session ended', { sessionId, userId });
-  } catch (error) {
-    logger.error('Failed to process session.ended webhook', { error: error instanceof Error ? error.message : String(error) });
-  }
-}
-
-/**
- * Handle organizationMembership.updated webhook (if using Clerk organizations)
- * Invalidate sessions when role changes
- * @param event - Clerk webhook event
- */
-async function handleOrgMembershipUpdated(event: ClerkWebhookEvent): Promise<void> {
-  if (event.type !== 'organizationMembership.updated') return;
-
-  const { user_id: userId, role } = event.data;
-
-  // Would need to track previous role to detect changes
-  logger.info('Webhook: organization membership updated', { userId, role });
-}
-
-/**
- * Process Clerk webhook event
- * Routes to appropriate handler based on event type
- * @param event - Parsed webhook event
- */
-export async function processClerkWebhookEvent(event: ClerkWebhookEvent): Promise<void> {
-  try {
-    switch (event.type) {
-      case 'user.updated':
-        await handleUserUpdated(event);
-        break;
-      case 'user.deleted':
-        await handleUserDeleted(event);
-        break;
-      case 'session.ended':
-        await handleSessionEnded(event);
-        break;
-      case 'organizationMembership.updated':
-        await handleOrgMembershipUpdated(event);
-        break;
-      default:
-        // Unknown event type
-        const _exhaustive: never = event;
-        return _exhaustive;
-    }
-  } catch (error) {
-    logger.error('Webhook: failed to process event', { error: error instanceof Error ? error.message : String(error) });
-    throw error;
   }
 }
 

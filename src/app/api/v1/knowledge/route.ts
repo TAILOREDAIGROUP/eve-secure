@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
 
     // Log the re-ingestion request
     await db.from('audit_events').insert({
-      user_id: null,
+      user_id: user.id,
       event_type: 'knowledge_reingestion_requested',
       event_data: {
         requestedBy: user.id,

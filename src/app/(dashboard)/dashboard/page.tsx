@@ -35,13 +35,13 @@ interface RecentActivity {
 
 export default function DashboardPage() {
   const [userId, setUserId] = useState<string | null>(null);
-  const supabase = createClient();
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUserId(user?.id ?? null);
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user?.id || null);
     });
-  }, [supabase]);
+  }, []);
 
   const { data: assessmentStatus, isLoading: assessmentLoading } =
     useQuery<AssessmentStatus>({

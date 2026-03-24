@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger';
 
 /**
  * POST /api/v1/auth/emergency
- * Emergency authentication via one-time codes (bypasses Clerk)
+ * Emergency authentication via one-time codes (bypasses standard auth)
  * Rate limit: 3 attempts per 15 minutes per email
  */
 

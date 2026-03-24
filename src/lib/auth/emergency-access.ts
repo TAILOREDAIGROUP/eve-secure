@@ -20,7 +20,7 @@ export class EmergencyAuthError extends Error {
  * - Generated at onboarding (8 single-use codes)
  * - Stored as bcrypt hashes only
  * - Never recoverable after initial generation
- * - Separate auth endpoint, bypasses Clerk
+ * - Separate auth endpoint, bypasses standard Supabase Auth
  */
 
 const EMERGENCY_CODE_LENGTH = 8;
@@ -189,7 +189,7 @@ export function getRemainingCodeCount(config: EmergencyAccessConfig): number {
 /**
  * Emergency access endpoint handler
  * Called by /api/auth/emergency endpoint
- * Bypasses Clerk authentication, uses emergency codes instead
+ * Bypasses standard Supabase Auth, uses emergency codes instead
  * @param userId - User ID attempting access
  * @param code - Emergency code provided
  * @param config - Emergency access configuration from database

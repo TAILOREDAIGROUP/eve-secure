@@ -48,14 +48,14 @@ interface EvalMetrics {
 export default function AdminPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const supabase = createClient();
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUserId(user?.id ?? null);
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user?.id || null);
       setIsLoaded(true);
     });
-  }, [supabase]);
+  }, []);
 
   const isAdmin = process.env.NEXT_PUBLIC_ADMIN_IDS?.includes(userId || "");
 

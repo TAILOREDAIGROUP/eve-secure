@@ -331,12 +331,3 @@ export function getTenantQueries(
   return new TenantQueries(client, tenantId, userId);
 }
 
-/**
- * Get the current user from Clerk auth
- * This is a placeholder - actual implementation depends on your Clerk setup
- */
-export async function getCurrentClerkUser() {
-  // Implementation depends on your Clerk integration
-  // For Next.js with middleware, this might come from headers
-  return null;
-}

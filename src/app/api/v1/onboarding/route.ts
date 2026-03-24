@@ -16,19 +16,19 @@ export async function POST(request: NextRequest) {
   const requestId = uuidv4();
 
   try {
-    const { user: authUser, tenantId: authTenantId, supabaseUid } = await requireAuth();
+    const { user, tenantId: authTenantId, supabaseUid } = await requireAuth();
 
     const body = await request.json();
     const validated = OnboardingSchema.parse(body);
 
     const db = getSupabaseAdmin();
-    const tenantId = uuidv4();
+    const newTenantId = uuidv4();
     const userId = uuidv4();
     const orgProfileId = uuidv4();
 
     // 1. Create tenant
     const { error: tenantError } = await db.from('tenants').insert({
-      id: tenantId,
+      id: newTenantId,
       name: validated.orgName,
       sector: validated.sector,
       state: validated.state,
@@ -51,9 +51,9 @@ export async function POST(request: NextRequest) {
     // 2. Create user record
     const { error: userError } = await db.from('users').insert({
       id: userId,
-      tenant_id: tenantId,
+      tenant_id: newTenantId,
       supabase_uid: supabaseUid,
-      email: body.email ?? authUser.email ?? `${supabaseUid}@eve-secure.com`,
+      email: body.email ?? user.email ?? `${supabaseUid}@eve-secure.com`,
       role: 'tenant_admin',
       notification_preferences: {
         email: validated.notificationPrefs.emailEnabled,
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     const { error: profileError } = await db.from('org_profiles').insert({
       id: orgProfileId,
-      tenant_id: tenantId,
+      tenant_id: newTenantId,
       org_name: validated.orgName,
       sector: validated.sector,
       state: validated.state,
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Generate emergency access codes
-    const { displayCodes } = await generateEmergencyAccessCodes(userId, tenantId);
+    const { displayCodes } = await generateEmergencyAccessCodes(userId, newTenantId);
 
     // Store hashed codes in DB
     const codeInserts = [];
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
 
     // 5. Set default notification preferences
     await db.from('notification_preferences').insert({
-      tenant_id: tenantId,
+      tenant_id: newTenantId,
       user_id: userId,
       email_enabled: validated.notificationPrefs.emailEnabled,
       sms_enabled: validated.notificationPrefs.smsEnabled,
@@ -122,17 +122,17 @@ export async function POST(request: NextRequest) {
 
     // 6. Audit log
     await db.from('audit_events').insert({
-      tenant_id: tenantId,
+      tenant_id: newTenantId,
       user_id: userId,
       event_type: 'onboarding_complete',
       event_data: { sector: validated.sector, state: validated.state, requestId },
     });
 
-    logger.info('Onboarding complete', { tenantId, userId, sector: validated.sector, requestId });
+    logger.info('Onboarding complete', { tenantId: newTenantId, userId, sector: validated.sector, requestId });
 
     return NextResponse.json(
       {
-        tenantId,
+        tenantId: newTenantId,
         orgId: orgProfileId,
         userId,
         status: 'created',
