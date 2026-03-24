@@ -102,27 +102,6 @@ function createPinoLogger(): PinoLogger {
         target: 'pino/file',
         options: { destination: 1 }, // stdout
       },
-      ...(isProduction
-        ? [
-            {
-              level: 'info',
-              target: 'pino-loki',
-              options: {
-                host: process.env.GRAFANA_LOKI_HOST || 'localhost',
-                basicAuth: {
-                  username: process.env.GRAFANA_LOKI_USER,
-                  password: process.env.GRAFANA_LOKI_PASSWORD,
-                },
-                labels: {
-                  service: 'eve-secure',
-                  environment: process.env.NODE_ENV,
-                  version: process.env.APP_VERSION,
-                },
-                timeout: 5000,
-              },
-            },
-          ]
-        : []),
     ],
   });
 
