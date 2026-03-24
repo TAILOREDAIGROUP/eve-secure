@@ -149,14 +149,7 @@ export async function GET(request: NextRequest) {
   const requestId = uuidv4();
 
   try {
-    // Auth — Supabase Auth with explicit verification
     const { user, tenantId } = await requireAuth();
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
-        { status: 401 }
-      );
-    }
 
     const db = getSupabaseAdmin();
 
@@ -236,14 +229,7 @@ export async function POST(request: NextRequest) {
   const requestId = uuidv4();
 
   try {
-    // Auth — Supabase Auth with explicit verification
     const { user: postUser, tenantId: postTenantId } = await requireAuth();
-    if (!postUser) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
-        { status: 401 }
-      );
-    }
 
     const db = getSupabaseAdmin();
 

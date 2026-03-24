@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { requireAuth, AuthError } from '@/lib/auth/supabase-auth';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/db';
@@ -22,27 +22,9 @@ export async function POST(request: NextRequest) {
   const requestId = uuidv4();
 
   try {
-    const session = await auth();
-    if (!session.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
-        { status: 401 }
-      );
-    }
+    const { user, tenantId } = await requireAuth();
 
     const db = getSupabaseAdmin();
-    const { data: user } = await db
-      .from('users')
-      .select('id, tenant_id, role')
-      .eq('clerk_id', session.userId)
-      .single();
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Forbidden', message: 'User not found', errorId: requestId },
-        { status: 403 }
-      );
-    }
 
     const body = await request.json();
     const validated = TabletopRequestSchema.parse(body);
@@ -51,7 +33,7 @@ export async function POST(request: NextRequest) {
     const { data: orgProfile } = await db
       .from('org_profiles')
       .select('*')
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', tenantId)
       .single();
 
     const sector = orgProfile?.sector ?? 'healthcare';
@@ -74,28 +56,34 @@ export async function POST(request: NextRequest) {
     const docId = uuidv4();
     await db.from('generated_documents').insert({
       id: docId,
-      tenant_id: user.tenant_id,
+      tenant_id: tenantId,
       session_id: docId, // self-referencing for tabletops without assessment
       doc_type: 'tabletop',
-      s3_key: `tabletop/${user.tenant_id}/${docId}.json`,
+      s3_key: `tabletop/${tenantId}/${docId}.json`,
       file_name: `tabletop-${validated.scenarioType}-${new Date().toISOString().split('T')[0]}.json`,
     } as any);
 
     await db.from('audit_events').insert({
-      tenant_id: user.tenant_id,
+      tenant_id: tenantId,
       user_id: user.id,
       event_type: 'tabletop_generated',
       event_data: { scenarioType: validated.scenarioType, difficulty: validated.difficulty, requestId },
     } as any);
 
     logger.info('Tabletop exercise generated', {
-      tenantId: user.tenant_id,
+      tenantId: tenantId,
       scenarioType: validated.scenarioType,
       requestId,
     });
 
     return NextResponse.json({ documentId: docId, exercise, generatedBy: 'template' }, { status: 201 });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId },
+        { status: error.statusCode }
+      );
+    }
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation Error', message: error.errors.map((e) => `${e.path}: ${e.message}`).join('; '), errorId: requestId },

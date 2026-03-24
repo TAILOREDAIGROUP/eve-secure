@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { clerkMiddleware, auth } from '@clerk/nextjs/server';
+import { requireAuth, AuthError } from '@/lib/auth/supabase-auth';
 import { Redis } from '@upstash/redis';
 import { z } from 'zod';
 import { logger } from '@/lib/logger';
@@ -50,23 +50,17 @@ type AuthContext = z.infer<typeof AuthContextSchema>;
  * @throws Error if authentication fails
  */
 async function extractAuthContext(request: NextRequest): Promise<AuthContext | null> {
-  const { userId, sessionId } = await auth();
-
-  if (!userId || !sessionId) {
-    return null;
-  }
-
-  // In production, fetch full session with metadata from Clerk
-  // This is a simplified version
-  const context: AuthContext = {
-    userId,
-    tenantId: '', // Would be extracted from session metadata
-    sessionId,
-    email: '', // Would be extracted from session
-    mfaVerified: false, // Would be checked from session metadata
-  };
-
   try {
+    const { user, tenantId, supabaseUid } = await requireAuth();
+
+    const context: AuthContext = {
+      userId: user.id,
+      tenantId,
+      sessionId: supabaseUid, // Use Supabase UID as session identifier
+      email: user.email ?? '',
+      mfaVerified: false, // Would be checked from Supabase session metadata
+    };
+
     return AuthContextSchema.parse(context);
   } catch {
     return null;

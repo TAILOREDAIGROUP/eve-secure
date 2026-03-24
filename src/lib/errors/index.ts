@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../logging/logger';
+import { captureError } from '../sentry';
 
 /**
  * Base application error class with structured error handling
@@ -245,12 +246,13 @@ export function handleError(
   };
 
   if (appError.statusCode >= 500) {
-    // Server errors - log with full stack trace
+    // Server errors - log with full stack trace and report to Sentry
     logger.error(appError.message, {
       ...logContext,
       stack: appError.stack,
       isOperational: appError.isOperational,
     });
+    captureError(appError, { tenantId, userId, requestId });
   } else if (appError.statusCode >= 400) {
     // Client errors - log at warn level
     logger.warn(appError.message, logContext);

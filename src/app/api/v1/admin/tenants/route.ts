@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { requireAuth, AuthError } from '@/lib/auth/supabase-auth';
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from '@/lib/db';
 import { logger } from '@/lib/logger';
@@ -15,30 +15,9 @@ export async function GET(request: NextRequest) {
   const requestId = uuidv4();
 
   try {
-    const session = await auth();
-    if (!session.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
-        { status: 401 }
-      );
-    }
+    const { user, tenantId } = await requireAuth();
 
     const db = getSupabaseAdmin();
-
-    // Resolve user and role
-    const { data: user, error: userError } = await db
-      .from('users')
-      .select('id, tenant_id, role')
-      .eq('clerk_id', session.userId)
-      .single();
-
-    if (userError || !user) {
-      logger.warn('User not found for clerk_id', { requestId, clerkId: session.userId });
-      return NextResponse.json(
-        { error: 'Forbidden', message: 'User record not found', errorId: requestId },
-        { status: 403 }
-      );
-    }
 
     // Regular users cannot access admin tenant list
     if (user.role !== 'super_admin' && user.role !== 'tenant_admin') {
@@ -54,11 +33,11 @@ export async function GET(request: NextRequest) {
       const { data: tenant, error: tenantError } = await db
         .from('tenants')
         .select('*')
-        .eq('id', user.tenant_id)
+        .eq('id', tenantId)
         .single();
 
       if (tenantError || !tenant) {
-        logger.error('Tenant not found', { requestId, tenantId: user.tenant_id });
+        logger.error('Tenant not found', { requestId, tenantId: tenantId });
         return NextResponse.json(
           { error: 'Internal Server Error', message: 'Tenant record not found', errorId: requestId },
           { status: 500 }
@@ -69,15 +48,15 @@ export async function GET(request: NextRequest) {
       const { count: userCount } = await db
         .from('users')
         .select('id', { count: 'exact', head: true })
-        .eq('tenant_id', user.tenant_id);
+        .eq('tenant_id', tenantId);
 
       // Get assessment count for this tenant
       const { count: assessmentCount } = await db
         .from('assessment_sessions')
         .select('id', { count: 'exact', head: true })
-        .eq('tenant_id', user.tenant_id);
+        .eq('tenant_id', tenantId);
 
-      logger.info('Tenant admin listed own tenant', { requestId, tenantId: user.tenant_id });
+      logger.info('Tenant admin listed own tenant', { requestId, tenantId: tenantId });
 
       return NextResponse.json({
         items: [
@@ -162,6 +141,12 @@ export async function GET(request: NextRequest) {
       pageSize,
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId },
+        { status: error.statusCode }
+      );
+    }
     logger.error('Unhandled error in GET /admin/tenants', {
       requestId,
       error: error instanceof Error ? error.message : 'Unknown error',

@@ -12,8 +12,9 @@ import {
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
-import { useAuth } from "@clerk/nextjs";
+import { createClient } from "@/lib/auth/supabase-auth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useState } from "react";
 
 interface AssessmentStatus {
   id: string;
@@ -33,7 +34,14 @@ interface RecentActivity {
 }
 
 export default function DashboardPage() {
-  const { userId } = useAuth();
+  const [userId, setUserId] = useState<string | null>(null);
+  const supabase = createClient();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserId(user?.id ?? null);
+    });
+  }, [supabase]);
 
   const { data: assessmentStatus, isLoading: assessmentLoading } =
     useQuery<AssessmentStatus>({

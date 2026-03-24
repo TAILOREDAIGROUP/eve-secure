@@ -3,11 +3,11 @@
 **Purpose:** Healthcare & legal risk assessment via RAG-only Claude integration with multi-tenant isolation.
 
 ## Tech Stack
-- **Frontend:** Next.js 14+ (Vercel), Shadcn/UI, Tailwind, Zustand
-- **Backend:** Node.js API (AWS ECS), PostgreSQL + pgvector (Supabase), Clerk auth with MFA
-- **AI:** Claude (Haiku/Sonnet/Opus via LiteLLM proxy), Supabase Automatic Embeddings (gte-small), RAG-only
-- **Infrastructure:** AWS (ECS, S3+SSE-KMS, Lambda, Secrets Manager), Cloudflare Pro WAF, Grafana Cloud
-- **IaC:** Pulumi (TypeScript), Docker Compose (local), GitHub Actions CI/CD with Snyk
+- **Frontend:** Next.js 14+ (Cloudflare Pages), Shadcn/UI, Tailwind, Zustand
+- **Backend:** Supabase (PostgreSQL + pgvector + Auth + MFA/TOTP + Automatic Embeddings), R2 storage
+- **AI:** Claude (Haiku/Sonnet/Opus via OpenRouter + direct Anthropic for HIPAA), RAG-only
+- **Infrastructure:** Cloudflare (Pages, R2, KV, WAF), Sentry error tracking, Grafana Cloud
+- **CI/CD:** GitHub Actions (lint, typecheck, test, security audit, build)
 
 ## Directory Map
 ```

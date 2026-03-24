@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { requireAuth, AuthError } from '@/lib/auth/supabase-auth';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/db';
@@ -133,23 +133,12 @@ export async function POST(request: NextRequest) {
   const requestId = uuidv4();
 
   try {
-    const session = await auth();
-    if (!session.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
-        { status: 401 }
-      );
-    }
+    const { user, tenantId, supabaseUid } = await requireAuth();
 
     // Check super_admin role
     const db = getSupabaseAdmin();
-    const { data: user } = await db
-      .from('users')
-      .select('role')
-      .eq('clerk_id', session.userId)
-      .single();
 
-    if (!user || user.role !== 'super_admin') {
+    if (user.role !== 'super_admin') {
       return NextResponse.json(
         { error: 'Forbidden', message: 'Super admin access required', errorId: requestId },
         { status: 403 }
@@ -166,14 +155,14 @@ export async function POST(request: NextRequest) {
       user_id: null,
       event_type: 'knowledge_reingestion_requested',
       event_data: {
-        requestedBy: session.userId,
+        requestedBy: user.id,
         currentDocCount: docCount,
         requestId,
       },
     });
 
     logger.info('Knowledge re-ingestion requested', {
-      requestedBy: session.userId,
+      requestedBy: user.id,
       currentDocCount: docCount,
       requestId,
     });
@@ -188,6 +177,12 @@ export async function POST(request: NextRequest) {
       { status: 202 }
     );
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId },
+        { status: error.statusCode }
+      );
+    }
     logger.error('Knowledge POST error', {
       error: error instanceof Error ? error.message : 'unknown',
       requestId,

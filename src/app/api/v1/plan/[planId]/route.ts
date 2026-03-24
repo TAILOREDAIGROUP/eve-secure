@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { requireAuth, AuthError } from '@/lib/auth/supabase-auth';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/db';
@@ -21,41 +21,21 @@ export async function GET(
   const requestId = uuidv4();
 
   try {
-    const session = await auth();
-    if (!session.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
-        { status: 401 }
-      );
-    }
+    const { user, tenantId } = await requireAuth();
 
     const { planId } = params;
     const db = getSupabaseAdmin();
-
-    // Resolve tenant
-    const { data: user, error: userError } = await db
-      .from('users')
-      .select('id, tenant_id, role')
-      .eq('clerk_id', session.userId)
-      .single();
-
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Forbidden', message: 'User record not found', errorId: requestId },
-        { status: 403 }
-      );
-    }
 
     // Fetch plan with tenant verification
     const { data: plan, error: planError } = await db
       .from('action_plans')
       .select('*')
       .eq('id', planId)
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', tenantId)
       .single();
 
     if (planError || !plan) {
-      logger.warn('Plan not found or access denied', { requestId, planId, tenantId: user.tenant_id });
+      logger.warn('Plan not found or access denied', { requestId, planId, tenantId });
       return NextResponse.json(
         { error: 'Not Found', message: 'Action plan not found', errorId: requestId },
         { status: 404 }
@@ -66,6 +46,12 @@ export async function GET(
 
     return NextResponse.json(plan);
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId },
+        { status: error.statusCode }
+      );
+    }
     logger.error('Unhandled error in GET /plan/[planId]', {
       requestId,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -89,30 +75,10 @@ export async function PUT(
   const requestId = uuidv4();
 
   try {
-    const session = await auth();
-    if (!session.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
-        { status: 401 }
-      );
-    }
+    const { user, tenantId } = await requireAuth();
 
     const { planId } = params;
     const db = getSupabaseAdmin();
-
-    // Resolve tenant
-    const { data: user, error: userError } = await db
-      .from('users')
-      .select('id, tenant_id, role')
-      .eq('clerk_id', session.userId)
-      .single();
-
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Forbidden', message: 'User record not found', errorId: requestId },
-        { status: 403 }
-      );
-    }
 
     // Validate input
     const body = await request.json();
@@ -135,7 +101,7 @@ export async function PUT(
       .from('action_plans')
       .select('*')
       .eq('id', planId)
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', tenantId)
       .single();
 
     if (planError || !plan) {
@@ -175,7 +141,7 @@ export async function PUT(
         updated_at: new Date().toISOString(),
       } as any)
       .eq('id', planId)
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', tenantId)
       .select()
       .single();
 
@@ -190,7 +156,7 @@ export async function PUT(
     // Audit event
     await db.from('audit_events').insert({
       id: uuidv4(),
-      tenant_id: user.tenant_id,
+      tenant_id: tenantId,
       user_id: user.id,
       event_type: 'plan.item_updated',
       event_data: {
@@ -215,6 +181,12 @@ export async function PUT(
       recommendations,
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId },
+        { status: error.statusCode }
+      );
+    }
     logger.error('Unhandled error in PUT /plan/[planId]', {
       requestId,
       error: error instanceof Error ? error.message : 'Unknown error',

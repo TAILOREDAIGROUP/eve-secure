@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { requireAuth, AuthError } from '@/lib/auth/supabase-auth';
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from '@/lib/db';
 import { logger } from '@/lib/logger';
@@ -13,29 +13,9 @@ export async function GET(request: NextRequest) {
   const requestId = uuidv4();
 
   try {
-    const session = await auth();
-    if (!session.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
-        { status: 401 }
-      );
-    }
+    const { user, tenantId } = await requireAuth();
 
     const db = getSupabaseAdmin();
-
-    const { data: user, error: userError } = await db
-      .from('users')
-      .select('id, tenant_id, role')
-      .eq('clerk_id', session.userId)
-      .single();
-
-    if (userError || !user) {
-      logger.warn('User not found for clerk_id', { requestId, clerkId: session.userId });
-      return NextResponse.json(
-        { error: 'Forbidden', message: 'User record not found', errorId: requestId },
-        { status: 403 }
-      );
-    }
 
     // Super-admin only
     if (user.role !== 'super_admin') {
@@ -98,6 +78,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(evalMetrics);
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId },
+        { status: error.statusCode }
+      );
+    }
     logger.error('Unhandled error in GET /admin/evals', {
       requestId,
       error: error instanceof Error ? error.message : 'Unknown error',

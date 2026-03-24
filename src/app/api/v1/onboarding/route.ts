@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { requireAuth, AuthError } from '@/lib/auth/supabase-auth';
 import { ZodError } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import { OnboardingSchema } from '@/lib/validation/schemas';
@@ -16,13 +16,7 @@ export async function POST(request: NextRequest) {
   const requestId = uuidv4();
 
   try {
-    const session = await auth();
-    if (!session.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
-        { status: 401 }
-      );
-    }
+    const { user: authUser, tenantId: authTenantId, supabaseUid } = await requireAuth();
 
     const body = await request.json();
     const validated = OnboardingSchema.parse(body);
@@ -58,14 +52,14 @@ export async function POST(request: NextRequest) {
     const { error: userError } = await db.from('users').insert({
       id: userId,
       tenant_id: tenantId,
-      clerk_id: session.userId,
-      email: body.email ?? `${session.userId}@eve-secure.com`,
+      supabase_uid: supabaseUid,
+      email: body.email ?? authUser.email ?? `${supabaseUid}@eve-secure.com`,
       role: 'tenant_admin',
       notification_preferences: {
         email: validated.notificationPrefs.emailEnabled,
         sms: validated.notificationPrefs.smsEnabled,
       },
-    });
+    } as any);
 
     if (userError) {
       logger.error('Failed to create user', { error: userError.message, requestId });
@@ -148,6 +142,12 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId },
+        { status: error.statusCode }
+      );
+    }
     if (error instanceof ZodError) {
       return NextResponse.json(
         {

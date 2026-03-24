@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { requireAuth, AuthError } from '@/lib/auth/supabase-auth';
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from '@/lib/db';
 import { logger } from '@/lib/logger';
@@ -12,30 +12,9 @@ export async function GET(request: NextRequest) {
   const requestId = uuidv4();
 
   try {
-    const session = await auth();
-    if (!session.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
-        { status: 401 }
-      );
-    }
+    const { user, tenantId } = await requireAuth();
 
     const db = getSupabaseAdmin();
-
-    // Resolve tenant from clerk_id
-    const { data: user, error: userError } = await db
-      .from('users')
-      .select('id, tenant_id, role')
-      .eq('clerk_id', session.userId)
-      .single();
-
-    if (userError || !user) {
-      logger.warn('User not found for clerk_id', { requestId, clerkId: session.userId });
-      return NextResponse.json(
-        { error: 'Forbidden', message: 'User record not found', errorId: requestId },
-        { status: 403 }
-      );
-    }
 
     // Pagination params
     const searchParams = request.nextUrl.searchParams;
@@ -47,7 +26,7 @@ export async function GET(request: NextRequest) {
     const { count, error: countError } = await db
       .from('assessment_sessions')
       .select('id', { count: 'exact', head: true })
-      .eq('tenant_id', user.tenant_id);
+      .eq('tenant_id', tenantId);
 
     if (countError) {
       logger.error('Failed to count assessment sessions', { requestId, error: countError.message });
@@ -61,7 +40,7 @@ export async function GET(request: NextRequest) {
     const { data: sessions, error: sessionsError } = await db
       .from('assessment_sessions')
       .select('id, tenant_id, user_id, status, current_section, progress_pct, tier_rating, started_at, completed_at, created_at')
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false })
       .range(offset, offset + pageSize - 1);
 
@@ -75,7 +54,7 @@ export async function GET(request: NextRequest) {
 
     logger.info('Listed assessment sessions', {
       requestId,
-      tenantId: user.tenant_id,
+      tenantId: tenantId,
       page,
       pageSize,
       total: count,
@@ -88,6 +67,12 @@ export async function GET(request: NextRequest) {
       pageSize,
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId },
+        { status: error.statusCode }
+      );
+    }
     logger.error('Unhandled error in GET /assessment', {
       requestId,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -108,30 +93,9 @@ export async function POST(request: NextRequest) {
   const requestId = uuidv4();
 
   try {
-    const session = await auth();
-    if (!session.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
-        { status: 401 }
-      );
-    }
+    const { user, tenantId } = await requireAuth();
 
     const db = getSupabaseAdmin();
-
-    // Resolve tenant from clerk_id
-    const { data: user, error: userError } = await db
-      .from('users')
-      .select('id, tenant_id, role')
-      .eq('clerk_id', session.userId)
-      .single();
-
-    if (userError || !user) {
-      logger.warn('User not found for clerk_id', { requestId, clerkId: session.userId });
-      return NextResponse.json(
-        { error: 'Forbidden', message: 'User record not found', errorId: requestId },
-        { status: 403 }
-      );
-    }
 
     const sessionId = uuidv4();
     const now = new Date().toISOString();
@@ -141,7 +105,7 @@ export async function POST(request: NextRequest) {
       .from('assessment_sessions')
       .insert({
         id: sessionId,
-        tenant_id: user.tenant_id,
+        tenant_id: tenantId,
         user_id: user.id,
         status: 'in_progress',
         current_section: 'GOVERN',
@@ -165,7 +129,7 @@ export async function POST(request: NextRequest) {
       .from('conversation_state')
       .insert({
         id: uuidv4(),
-        tenant_id: user.tenant_id,
+        tenant_id: tenantId,
         session_id: sessionId,
         context_summary: null,
         current_section_qa: [] as any,
@@ -181,7 +145,7 @@ export async function POST(request: NextRequest) {
     // Audit event
     await db.from('audit_events').insert({
       id: uuidv4(),
-      tenant_id: user.tenant_id,
+      tenant_id: tenantId,
       user_id: user.id,
       event_type: 'assessment.started',
       event_data: { sessionId, section: 'GOVERN' } as any,
@@ -190,12 +154,18 @@ export async function POST(request: NextRequest) {
     logger.info('Assessment session created', {
       requestId,
       sessionId,
-      tenantId: user.tenant_id,
+      tenantId: tenantId,
       userId: user.id,
     });
 
     return NextResponse.json(newSession, { status: 201 });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId },
+        { status: error.statusCode }
+      );
+    }
     logger.error('Unhandled error in POST /assessment', {
       requestId,
       error: error instanceof Error ? error.message : 'Unknown error',

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { requireAuth, AuthError } from '@/lib/auth/supabase-auth';
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from '@/lib/db';
 import { logger } from '@/lib/logger';
@@ -14,14 +14,7 @@ export async function GET(request: NextRequest) {
   const requestId = uuidv4();
 
   try {
-    // Auth check on connect
-    const session = await auth();
-    if (!session.userId) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized', message: 'Authentication required', errorId: requestId }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
+    const { user, tenantId } = await requireAuth();
 
     const searchParams = request.nextUrl.searchParams;
     const sessionId = searchParams.get('sessionId');
@@ -35,26 +28,12 @@ export async function GET(request: NextRequest) {
 
     const db = getSupabaseAdmin();
 
-    // Verify tenant ownership
-    const { data: user, error: userError } = await db
-      .from('users')
-      .select('id, tenant_id, role')
-      .eq('clerk_id', session.userId)
-      .single();
-
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Forbidden', message: 'User record not found', errorId: requestId }),
-        { status: 403, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
     // Verify session belongs to tenant
     const { data: assessmentSession, error: sessionError } = await db
       .from('assessment_sessions')
       .select('id, tenant_id, current_section, status')
       .eq('id', sessionId)
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', tenantId)
       .single();
 
     if (sessionError || !assessmentSession) {
@@ -144,6 +123,12 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return new Response(
+        JSON.stringify({ error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId }),
+        { status: error.statusCode, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
     logger.error('Unhandled error in GET /sse', {
       requestId,
       error: error instanceof Error ? error.message : 'Unknown error',

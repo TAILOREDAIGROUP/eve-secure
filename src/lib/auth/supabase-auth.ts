@@ -141,22 +141,23 @@ export async function requireAuth(): Promise<AuthResult> {
   }
 
   // Resolve user record and tenant from database
+  // Note: DB column is 'supabase_uid' (migrated from clerk_id), typed as any until types regenerated
   const db = getSupabaseAdmin();
-  const { data: user, error: userError } = await db
+  const { data: user, error: userError } = await (db
     .from('users')
     .select('id, tenant_id, role, email')
-    .eq('supabase_uid', authUser.id)
-    .single();
+    .eq('supabase_uid' as string, authUser.id)
+    .single() as any);
 
   if (userError || !user) {
     throw new AuthError('User record not found', 403);
   }
 
   // Set RLS context for tenant isolation
-  await db.rpc('set_rls_context', {
+  await (db.rpc as Function)('set_rls_context', {
     p_user_id: user.id,
     p_tenant_id: user.tenant_id,
-  }).then(({ error }) => {
+  }).then(({ error }: { error: unknown }) => {
     if (error) {
       // Non-fatal: RLS will still filter by tenant_id in queries
     }
@@ -234,7 +235,7 @@ export async function setRLSContext(
   userId: string,
   tenantId: string
 ) {
-  await supabase.rpc('set_rls_context', {
+  await (supabase.rpc as Function)('set_rls_context', {
     p_user_id: userId,
     p_tenant_id: tenantId,
   });

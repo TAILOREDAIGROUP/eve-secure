@@ -1,23 +1,49 @@
 "use client";
 
-import { UserButton, useAuth } from "@clerk/nextjs";
-import { redirect } from "next/navigation";
+import { createClient } from "@/lib/auth/supabase-auth";
+import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
-import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isLoaded, isSignedIn } = useAuth();
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(false);
+  const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      redirect("/login");
-    }
-  }, [isLoaded, isSignedIn]);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsSignedIn(!!session);
+      setIsLoaded(true);
+      if (!session) {
+        router.push("/login");
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsSignedIn(!!session);
+      if (!session) {
+        router.push("/login");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase, router]);
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
 
   if (!isLoaded) {
     return (
@@ -30,6 +56,10 @@ export default function DashboardLayout({
     );
   }
 
+  if (!isSignedIn) {
+    return null;
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-slate-950">
       {/* Header */}
@@ -40,14 +70,15 @@ export default function DashboardLayout({
           </div>
           <div className="flex items-center gap-4">
             <MobileNav />
-            <UserButton
-              appearance={{
-                elements: {
-                  avatarBox: "h-9 w-9",
-                  userButtonPopoverActionButton: "text-slate-300",
-                },
-              }}
-            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSignOut}
+              className="text-slate-400 hover:text-white"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </Button>
           </div>
         </div>
       </header>

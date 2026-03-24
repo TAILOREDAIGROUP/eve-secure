@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { requireAuth, AuthError } from '@/lib/auth/supabase-auth';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/db';
@@ -16,25 +16,14 @@ export async function GET(
   const requestId = uuidv4();
 
   try {
-    const session = await auth();
-    if (!session.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
-        { status: 401 }
-      );
-    }
+    const { user, tenantId: authTenantId } = await requireAuth();
 
     const { tenantId } = params;
 
-    // Verify tenant ownership via user's clerk_id
+    // Verify tenant ownership
     const db = getSupabaseAdmin();
-    const { data: user } = await db
-      .from('users')
-      .select('tenant_id')
-      .eq('clerk_id', session.userId)
-      .single();
 
-    if (!user || user.tenant_id !== tenantId) {
+    if (authTenantId !== tenantId) {
       return NextResponse.json(
         { error: 'Forbidden', message: 'Access denied to this organization', errorId: requestId },
         { status: 403 }
@@ -56,6 +45,12 @@ export async function GET(
 
     return NextResponse.json({ data: profile });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId },
+        { status: error.statusCode }
+      );
+    }
     logger.error('Get org profile error', {
       error: error instanceof Error ? error.message : 'unknown',
       requestId,
@@ -89,25 +84,13 @@ export async function PUT(
   const requestId = uuidv4();
 
   try {
-    const session = await auth();
-    if (!session.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
-        { status: 401 }
-      );
-    }
+    const { user, tenantId: authTenantId } = await requireAuth();
 
     const { tenantId } = params;
     const db = getSupabaseAdmin();
 
     // Verify tenant ownership
-    const { data: user } = await db
-      .from('users')
-      .select('tenant_id')
-      .eq('clerk_id', session.userId)
-      .single();
-
-    if (!user || user.tenant_id !== tenantId) {
+    if (authTenantId !== tenantId) {
       return NextResponse.json(
         { error: 'Forbidden', message: 'Access denied to this organization', errorId: requestId },
         { status: 403 }
@@ -143,13 +126,19 @@ export async function PUT(
 
     await db.from('audit_events').insert({
       tenant_id: tenantId,
-      user_id: user.tenant_id,
+      user_id: user.id,
       event_type: 'org_profile_updated',
       event_data: { fields: Object.keys(validated), requestId },
     });
 
     return NextResponse.json({ data: updated });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId },
+        { status: error.statusCode }
+      );
+    }
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {

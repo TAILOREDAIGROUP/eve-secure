@@ -1,11 +1,48 @@
 "use client";
 
-import { SignUp } from "@clerk/nextjs";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Shield } from "lucide-react";
+import { createClient } from "@/lib/auth/supabase-auth";
+import { useRouter } from "next/navigation";
 
 export default function SignUpPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const supabase = createClient();
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/onboarding`,
+        },
+      });
+
+      if (signUpError) {
+        setError(signUpError.message);
+        return;
+      }
+
+      router.push("/onboarding");
+      router.refresh();
+    } catch {
+      setError("An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-8">
       <Suspense fallback={<div className="text-white">Loading...</div>}>
@@ -25,27 +62,60 @@ export default function SignUpPage() {
 
           {/* Sign Up Card */}
           <Card className="border border-slate-700 bg-slate-800/50 p-6 backdrop-blur-sm">
-            <SignUp
-              appearance={{
-                elements: {
-                  rootBox: "w-full",
-                  card: "shadow-none border-0 bg-transparent",
-                  socialButtonsBlockButton:
-                    "border border-slate-600 bg-slate-700/50 text-white hover:bg-slate-700",
-                  formButtonPrimary:
-                    "bg-blue-600 text-white hover:bg-blue-700 rounded-lg",
-                  formFieldInput:
-                    "bg-slate-700 border-slate-600 text-white placeholder:text-slate-400",
-                  headerTitle: "text-white text-xl font-semibold",
-                  headerSubtitle: "text-slate-400 text-sm",
-                  dividerLine: "bg-slate-700",
-                  dividerText: "text-slate-400",
-                  footerActionLink: "text-blue-400 hover:text-blue-300",
-                },
-              }}
-              redirectUrl="/onboarding"
-              signInUrl="/login"
-            />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  className="w-full rounded-lg border border-slate-600 bg-slate-700 px-3 py-2 text-white placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="you@company.com"
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                  minLength={12}
+                  className="w-full rounded-lg border border-slate-600 bg-slate-700 px-3 py-2 text-white placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="Minimum 12 characters"
+                />
+              </div>
+
+              {error && (
+                <div className="rounded-lg border border-red-800 bg-red-900/30 p-3">
+                  <p className="text-sm text-red-300">{error}</p>
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-600 text-white hover:bg-blue-700 rounded-lg"
+              >
+                {loading ? "Creating account..." : "Create Account"}
+              </Button>
+
+              <p className="text-center text-sm text-slate-400">
+                Already have an account?{" "}
+                <a href="/login" className="text-blue-400 hover:text-blue-300">
+                  Sign in
+                </a>
+              </p>
+            </form>
           </Card>
 
           {/* Features List */}

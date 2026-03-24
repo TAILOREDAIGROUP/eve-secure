@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { requireAuth, AuthError } from '@/lib/auth/supabase-auth';
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from '@/lib/db';
 import { logger } from '@/lib/logger';
@@ -15,41 +15,21 @@ export async function GET(
   const requestId = uuidv4();
 
   try {
-    const session = await auth();
-    if (!session.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
-        { status: 401 }
-      );
-    }
+    const { user, tenantId } = await requireAuth();
 
     const { sessionId } = params;
     const db = getSupabaseAdmin();
-
-    // Resolve tenant from clerk_id
-    const { data: user, error: userError } = await db
-      .from('users')
-      .select('id, tenant_id, role')
-      .eq('clerk_id', session.userId)
-      .single();
-
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Forbidden', message: 'User record not found', errorId: requestId },
-        { status: 403 }
-      );
-    }
 
     // Fetch session and verify tenant ownership
     const { data: assessmentSession, error: sessionError } = await db
       .from('assessment_sessions')
       .select('*')
       .eq('id', sessionId)
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', tenantId)
       .single();
 
     if (sessionError || !assessmentSession) {
-      logger.warn('Assessment session not found or access denied', { requestId, sessionId, tenantId: user.tenant_id });
+      logger.warn('Assessment session not found or access denied', { requestId, sessionId, tenantId: tenantId });
       return NextResponse.json(
         { error: 'Not Found', message: 'Assessment session not found', errorId: requestId },
         { status: 404 }
@@ -61,7 +41,7 @@ export async function GET(
       .from('assessment_responses')
       .select('id, section, question_text, response_text, metadata, created_at')
       .eq('session_id', sessionId)
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', tenantId)
       .order('created_at', { ascending: true });
 
     if (responsesError) {
@@ -73,7 +53,7 @@ export async function GET(
       .from('conversation_state')
       .select('context_summary, current_section_qa, token_count, updated_at')
       .eq('session_id', sessionId)
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', tenantId)
       .single();
 
     if (stateError) {
@@ -88,6 +68,12 @@ export async function GET(
       conversationState: conversationState ?? null,
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId },
+        { status: error.statusCode }
+      );
+    }
     logger.error('Unhandled error in GET /assessment/[sessionId]', {
       requestId,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -110,37 +96,17 @@ export async function DELETE(
   const requestId = uuidv4();
 
   try {
-    const session = await auth();
-    if (!session.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
-        { status: 401 }
-      );
-    }
+    const { user, tenantId } = await requireAuth();
 
     const { sessionId } = params;
     const db = getSupabaseAdmin();
-
-    // Resolve tenant from clerk_id
-    const { data: user, error: userError } = await db
-      .from('users')
-      .select('id, tenant_id, role')
-      .eq('clerk_id', session.userId)
-      .single();
-
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Forbidden', message: 'User record not found', errorId: requestId },
-        { status: 403 }
-      );
-    }
 
     // Verify ownership before update
     const { data: existing, error: fetchError } = await db
       .from('assessment_sessions')
       .select('id, status')
       .eq('id', sessionId)
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', tenantId)
       .single();
 
     if (fetchError || !existing) {
@@ -169,7 +135,7 @@ export async function DELETE(
       .from('assessment_sessions')
       .update({ status: 'abandoned' } as any)
       .eq('id', sessionId)
-      .eq('tenant_id', user.tenant_id);
+      .eq('tenant_id', tenantId);
 
     if (updateError) {
       logger.error('Failed to abandon assessment session', { requestId, error: updateError.message });
@@ -182,16 +148,22 @@ export async function DELETE(
     // Audit event
     await db.from('audit_events').insert({
       id: uuidv4(),
-      tenant_id: user.tenant_id,
+      tenant_id: tenantId,
       user_id: user.id,
       event_type: 'assessment.abandoned',
       event_data: { sessionId } as any,
     } as any);
 
-    logger.info('Assessment session abandoned', { requestId, sessionId, tenantId: user.tenant_id });
+    logger.info('Assessment session abandoned', { requestId, sessionId, tenantId: tenantId });
 
     return NextResponse.json({ sessionId, status: 'abandoned' });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId },
+        { status: error.statusCode }
+      );
+    }
     logger.error('Unhandled error in DELETE /assessment/[sessionId]', {
       requestId,
       error: error instanceof Error ? error.message : 'Unknown error',

@@ -1,3 +1,5 @@
+import { withSentryConfig } from '@sentry/nextjs';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -80,9 +82,6 @@ const nextConfig = {
     return config;
   },
 
-  // Strict mode for catching issues
-  reactStrictMode: true,
-
   // Compression
   compress: true,
 
@@ -98,4 +97,18 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Sentry webpack plugin options
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+
+  // Upload source maps for better stack traces
+  widenClientFileUpload: true,
+
+  // Suppress source map upload logs in CI
+  silent: !process.env.CI,
+
+  // Disable Sentry telemetry
+  telemetry: false,
+});

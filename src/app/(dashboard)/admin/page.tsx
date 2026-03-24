@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
+import { createClient } from "@/lib/auth/supabase-auth";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { TenantList } from "@/components/admin/tenant-list";
 import { redirect } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface AdminStats {
   totalTenants: number;
@@ -46,7 +46,17 @@ interface EvalMetrics {
 }
 
 export default function AdminPage() {
-  const { userId, isLoaded } = useAuth();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserId(user?.id ?? null);
+      setIsLoaded(true);
+    });
+  }, [supabase]);
+
   const isAdmin = process.env.NEXT_PUBLIC_ADMIN_IDS?.includes(userId || "");
 
   useEffect(() => {

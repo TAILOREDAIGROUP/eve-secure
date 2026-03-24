@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { requireAuth, AuthError } from '@/lib/auth/supabase-auth';
 import { v4 as uuidv4 } from 'uuid';
 import { getSupabaseAdmin } from '@/lib/db';
 import { logger } from '@/lib/logger';
@@ -15,27 +15,9 @@ export async function GET(
   const requestId = uuidv4();
 
   try {
-    const session = await auth();
-    if (!session.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
-        { status: 401 }
-      );
-    }
+    const { user, tenantId } = await requireAuth();
 
     const db = getSupabaseAdmin();
-    const { data: user } = await db
-      .from('users')
-      .select('id, tenant_id, role')
-      .eq('clerk_id', session.userId)
-      .single();
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Forbidden', message: 'User record not found', errorId: requestId },
-        { status: 403 }
-      );
-    }
 
     const { docId } = params;
 
@@ -43,7 +25,7 @@ export async function GET(
       .from('generated_documents')
       .select('*')
       .eq('id', docId)
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', tenantId)
       .single();
 
     if (docError || !doc) {
@@ -56,7 +38,7 @@ export async function GET(
     // Generate pre-signed URL placeholder (in production: use S3 getSignedUrl)
     const presignedUrl = `https://${process.env.AWS_S3_BUCKET ?? 'eve-secure-docs'}.s3.amazonaws.com/${doc.s3_key}?X-Amz-Expires=3600`;
 
-    logger.info('Document accessed', { requestId, docId, tenantId: user.tenant_id });
+    logger.info('Document accessed', { requestId, docId, tenantId: tenantId });
 
     return NextResponse.json({
       id: doc.id,
@@ -68,6 +50,12 @@ export async function GET(
       createdAt: doc.created_at,
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId },
+        { status: error.statusCode }
+      );
+    }
     logger.error('Document GET error', {
       requestId,
       error: error instanceof Error ? error.message : 'Unknown error',
