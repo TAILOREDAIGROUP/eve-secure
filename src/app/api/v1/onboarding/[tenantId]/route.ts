@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/db';
 import { logger } from '@/lib/logger';
 
-export const runtime = 'edge';
 
 /**
  * GET /api/v1/onboarding/[tenantId]

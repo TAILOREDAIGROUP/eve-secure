@@ -39,3 +39,6 @@ next-env.d.ts
 
 # Misc
 *.pem
+
+# OpenNext build output
+.open-next/

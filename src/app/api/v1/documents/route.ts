@@ -5,7 +5,6 @@ import { getSupabaseAdmin } from '@/lib/db';
 import { requireAuth, AuthError } from '@/lib/auth/supabase-auth-server';
 import { logger } from '@/lib/logger';
 
-export const runtime = 'edge';
 
 const DANGEROUS_PATTERNS = [
   /<script\b[^>]*>/i,

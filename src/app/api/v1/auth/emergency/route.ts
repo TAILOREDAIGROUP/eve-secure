@@ -5,7 +5,6 @@ import bcrypt from 'bcryptjs';
 import { getSupabaseAdmin } from '@/lib/db';
 import { logger } from '@/lib/logger';
 
-export const runtime = 'edge';
 
 /**
  * POST /api/v1/auth/emergency
