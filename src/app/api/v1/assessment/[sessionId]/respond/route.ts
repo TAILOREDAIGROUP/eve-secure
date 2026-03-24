@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/db';
+import { requireAuth, AuthError } from '@/lib/auth/supabase-auth';
 import { logger } from '@/lib/logger';
 
 /**
@@ -134,9 +134,9 @@ export async function POST(
   const requestId = uuidv4();
 
   try {
-    // 1. Auth
-    const session = await auth();
-    if (!session.userId) {
+    // 1. Auth — Supabase Auth with explicit verification
+    const { user, tenantId } = await requireAuth();
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
         { status: 401 }
@@ -146,26 +146,12 @@ export async function POST(
     const { sessionId } = params;
     const db = getSupabaseAdmin();
 
-    // Resolve tenant
-    const { data: user, error: userError } = await db
-      .from('users')
-      .select('id, tenant_id, role')
-      .eq('clerk_id', session.userId)
-      .single();
-
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Forbidden', message: 'User record not found', errorId: requestId },
-        { status: 403 }
-      );
-    }
-
     // Verify session ownership
     const { data: assessmentSession, error: sessionError } = await db
       .from('assessment_sessions')
       .select('*')
       .eq('id', sessionId)
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', tenantId)
       .single();
 
     if (sessionError || !assessmentSession) {
@@ -204,7 +190,7 @@ export async function POST(
       .from('assessment_responses')
       .insert({
         id: responseId,
-        tenant_id: user.tenant_id,
+        tenant_id: tenantId,
         session_id: sessionId,
         question_id: questionId ?? null,
         section,
@@ -225,7 +211,7 @@ export async function POST(
     const { data: orgProfile } = await db
       .from('org_profiles')
       .select('*')
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', tenantId)
       .single();
 
     const sector = orgProfile?.sector ?? 'healthcare';
@@ -277,7 +263,7 @@ export async function POST(
         updated_at: new Date().toISOString(),
       } as any)
       .eq('session_id', sessionId)
-      .eq('tenant_id', user.tenant_id);
+      .eq('tenant_id', tenantId);
 
     if (updateStateError) {
       logger.warn('Failed to update conversation state', { requestId, error: updateStateError.message });
@@ -300,6 +286,12 @@ export async function POST(
       generatedBy: 'template',
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId },
+        { status: error.statusCode }
+      );
+    }
     logger.error('Unhandled error in POST /assessment/[sessionId]/respond', {
       requestId,
       error: error instanceof Error ? error.message : 'Unknown error',

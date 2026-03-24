@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/db';
+import { requireAuth, AuthError } from '@/lib/auth/supabase-auth';
 import { logger } from '@/lib/logger';
 
 const DANGEROUS_PATTERNS = [
@@ -149,8 +149,9 @@ export async function GET(request: NextRequest) {
   const requestId = uuidv4();
 
   try {
-    const session = await auth();
-    if (!session.userId) {
+    // Auth — Supabase Auth with explicit verification
+    const { user, tenantId } = await requireAuth();
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
         { status: 401 }
@@ -158,20 +159,6 @@ export async function GET(request: NextRequest) {
     }
 
     const db = getSupabaseAdmin();
-
-    const { data: user, error: userError } = await db
-      .from('users')
-      .select('id, tenant_id, role')
-      .eq('clerk_id', session.userId)
-      .single();
-
-    if (userError || !user) {
-      logger.warn('User not found for clerk_id', { requestId, clerkId: session.userId });
-      return NextResponse.json(
-        { error: 'Forbidden', message: 'User record not found', errorId: requestId },
-        { status: 403 }
-      );
-    }
 
     // Pagination params
     const searchParams = request.nextUrl.searchParams;
@@ -183,7 +170,7 @@ export async function GET(request: NextRequest) {
     const { count, error: countError } = await db
       .from('generated_documents')
       .select('id', { count: 'exact', head: true })
-      .eq('tenant_id', user.tenant_id);
+      .eq('tenant_id', tenantId);
 
     if (countError) {
       logger.error('Failed to count documents', { requestId, error: countError.message });
@@ -197,7 +184,7 @@ export async function GET(request: NextRequest) {
     const { data: documents, error: docsError } = await db
       .from('generated_documents')
       .select('id, tenant_id, session_id, doc_type, status, file_name, s3_key, created_at, updated_at')
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false })
       .range(offset, offset + pageSize - 1);
 
@@ -211,7 +198,7 @@ export async function GET(request: NextRequest) {
 
     logger.info('Listed documents', {
       requestId,
-      tenantId: user.tenant_id,
+      tenantId,
       page,
       pageSize,
       total: count,
@@ -224,6 +211,12 @@ export async function GET(request: NextRequest) {
       pageSize,
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId },
+        { status: error.statusCode }
+      );
+    }
     logger.error('Unhandled error in GET /documents', {
       requestId,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -243,8 +236,9 @@ export async function POST(request: NextRequest) {
   const requestId = uuidv4();
 
   try {
-    const session = await auth();
-    if (!session.userId) {
+    // Auth — Supabase Auth with explicit verification
+    const { user: postUser, tenantId: postTenantId } = await requireAuth();
+    if (!postUser) {
       return NextResponse.json(
         { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
         { status: 401 }
@@ -252,21 +246,6 @@ export async function POST(request: NextRequest) {
     }
 
     const db = getSupabaseAdmin();
-
-    // Resolve tenant
-    const { data: user, error: userError } = await db
-      .from('users')
-      .select('id, tenant_id, role')
-      .eq('clerk_id', session.userId)
-      .single();
-
-    if (userError || !user) {
-      logger.warn('User not found for clerk_id', { requestId, clerkId: session.userId });
-      return NextResponse.json(
-        { error: 'Forbidden', message: 'User record not found', errorId: requestId },
-        { status: 403 }
-      );
-    }
 
     // Validate input
     const body = await request.json();
@@ -301,7 +280,7 @@ export async function POST(request: NextRequest) {
       .from('assessment_sessions')
       .select('*')
       .eq('id', sessionId)
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', postTenantId)
       .single();
 
     if (sessionError || !assessmentSession) {
@@ -318,7 +297,7 @@ export async function POST(request: NextRequest) {
     const { data: orgProfile } = await db
       .from('org_profiles')
       .select('*')
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', postTenantId)
       .single();
 
     // Generate content based on docType
@@ -340,12 +319,12 @@ export async function POST(request: NextRequest) {
       .from('generated_documents')
       .insert({
         id: docId,
-        tenant_id: user.tenant_id,
+        tenant_id: postTenantId,
         session_id: sessionId,
         doc_type: docType,
         status: 'generating',
         file_name: fileName,
-        s3_key: `documents/${user.tenant_id}/${docId}/${fileName}`,
+        s3_key: `documents/${postTenantId}/${docId}/${fileName}`,
         content_json: content as any,
       } as any)
       .select()
@@ -362,8 +341,8 @@ export async function POST(request: NextRequest) {
     // Audit event
     await db.from('audit_events').insert({
       id: uuidv4(),
-      tenant_id: user.tenant_id,
-      user_id: user.id,
+      tenant_id: postTenantId,
+      user_id: postUser.id,
       event_type: 'document.generation_started',
       event_data: { docId, sessionId, docType } as any,
     } as any);
@@ -373,7 +352,7 @@ export async function POST(request: NextRequest) {
       docId,
       sessionId,
       docType,
-      tenantId: user.tenant_id,
+      tenantId: postTenantId,
     });
 
     return NextResponse.json(
@@ -388,6 +367,12 @@ export async function POST(request: NextRequest) {
       { status: 202 }
     );
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId },
+        { status: error.statusCode }
+      );
+    }
     logger.error('Unhandled error in POST /documents', {
       requestId,
       error: error instanceof Error ? error.message : 'Unknown error',

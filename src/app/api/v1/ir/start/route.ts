@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/db';
+import { requireAuth, AuthError } from '@/lib/auth/supabase-auth';
 import { logger } from '@/lib/logger';
 
 const IRStartSchema = z.object({
@@ -242,8 +242,9 @@ export async function POST(request: NextRequest) {
   const requestId = uuidv4();
 
   try {
-    const session = await auth();
-    if (!session.userId) {
+    // Auth — Supabase Auth with explicit verification
+    const { user, tenantId } = await requireAuth();
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized', message: 'Authentication required', errorId: requestId },
         { status: 401 }
@@ -251,21 +252,6 @@ export async function POST(request: NextRequest) {
     }
 
     const db = getSupabaseAdmin();
-
-    // Resolve tenant
-    const { data: user, error: userError } = await db
-      .from('users')
-      .select('id, tenant_id, role')
-      .eq('clerk_id', session.userId)
-      .single();
-
-    if (userError || !user) {
-      logger.warn('User not found for clerk_id', { requestId, clerkId: session.userId });
-      return NextResponse.json(
-        { error: 'Forbidden', message: 'User record not found', errorId: requestId },
-        { status: 403 }
-      );
-    }
 
     // Validate input
     const body = await request.json();
@@ -287,7 +273,7 @@ export async function POST(request: NextRequest) {
     const { data: orgProfile } = await db
       .from('org_profiles')
       .select('sector')
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', tenantId)
       .single();
 
     const sector = orgProfile?.sector ?? null;
@@ -300,7 +286,7 @@ export async function POST(request: NextRequest) {
       .from('assessment_sessions')
       .insert({
         id: irSessionId,
-        tenant_id: user.tenant_id,
+        tenant_id: tenantId,
         user_id: user.id,
         status: 'in_progress',
         current_section: 'IR_INTAKE',
@@ -331,7 +317,7 @@ export async function POST(request: NextRequest) {
     // Log audit event
     await db.from('audit_events').insert({
       id: uuidv4(),
-      tenant_id: user.tenant_id,
+      tenant_id: tenantId,
       user_id: user.id,
       event_type: 'ir_walkthrough_started',
       event_data: {
@@ -346,7 +332,7 @@ export async function POST(request: NextRequest) {
     logger.info('IR walkthrough session started', {
       requestId,
       irSessionId,
-      tenantId: user.tenant_id,
+      tenantId: tenantId,
       incidentType,
       severity,
       sector,
@@ -373,6 +359,12 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.statusCode === 401 ? 'Unauthorized' : 'Forbidden', message: error.message, errorId: requestId },
+        { status: error.statusCode }
+      );
+    }
     logger.error('Unhandled error in POST /ir/start', {
       requestId,
       error: error instanceof Error ? error.message : 'Unknown error',

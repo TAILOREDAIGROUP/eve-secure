@@ -2,6 +2,12 @@ import { embedQuery } from "./embeddings";
 import { getSupabaseAdmin } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
+import { getSectorPrompt } from "@/lib/ai/prompts/sector-prompts";
+import { validateRecommendation } from "@/lib/ai/guardrails/recommendation-validator";
+import type { OrgProfile } from "@/types";
+
+const EMBEDDING_TIMEOUT_MS = 20_000;
+const VECTOR_SEARCH_TIMEOUT_MS = 15_000;
 
 /**
  * Retrieved knowledge item from vector store
@@ -106,16 +112,26 @@ export async function retrieveContext(
       minSimilarity,
     });
 
-    // Generate embedding for query
-    const queryEmbedding = await embedQuery(query);
+    // Generate embedding for query with timeout
+    const queryEmbedding = await Promise.race([
+      embedQuery(query),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Embedding generation timed out")), EMBEDDING_TIMEOUT_MS)
+      ),
+    ]);
 
-    // Search pgvector with cosine similarity
+    // Search pgvector with cosine similarity (with timeout)
     const supabase = getSupabaseAdmin();
-    const { data: results, error } = await supabase.rpc('search_knowledge_documents', {
-      query_embedding: JSON.stringify(queryEmbedding),
-      match_threshold: minSimilarity,
-      match_count: topK,
-    });
+    const { data: results, error } = await Promise.race([
+      supabase.rpc('search_knowledge_documents', {
+        query_embedding: JSON.stringify(queryEmbedding),
+        match_threshold: minSimilarity,
+        match_count: topK,
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Vector search timed out")), VECTOR_SEARCH_TIMEOUT_MS)
+      ),
+    ]);
 
     if (error) {
       throw new Error(`Vector search failed: ${error.message}`);
@@ -148,6 +164,66 @@ export async function retrieveContext(
 }
 
 /**
+ * Fallback keyword search using SQL ILIKE
+ * Used when vector search fails (embedding error, timeout, etc.)
+ */
+async function keywordFallbackSearch(
+  query: string,
+  topK: number = 8
+): Promise<KnowledgeItem[]> {
+  try {
+    logger.info("Falling back to SQL ILIKE keyword search", { queryLength: query.length });
+
+    const supabase = getSupabaseAdmin();
+
+    // Extract meaningful keywords (3+ chars, skip common words)
+    const stopWords = new Set(["the", "and", "for", "are", "but", "not", "you", "all", "can", "had", "her", "was", "one", "our", "out", "has", "have", "with", "that", "this", "from", "what", "how", "when", "where", "which", "who", "will", "about", "into", "does"]);
+    const keywords = query
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length >= 3 && !stopWords.has(w));
+
+    if (keywords.length === 0) {
+      return [];
+    }
+
+    const orConditions = keywords
+      .slice(0, 5)
+      .map((kw) => `content.ilike.%${kw}%`)
+      .join(",");
+
+    const { data: results, error } = await supabase
+      .from("knowledge_documents")
+      .select("id, type, content, source, metadata")
+      .or(orConditions)
+      .limit(topK);
+
+    if (error) {
+      logger.error("Keyword fallback search failed", { error: error.message });
+      return [];
+    }
+
+    const items: KnowledgeItem[] = (results || []).map((r: any) => ({
+      id: r.id,
+      type: (r.type as KnowledgeItem["type"]) || "compliance",
+      content: r.content,
+      source: r.source || "keyword-search",
+      similarity: 0.5,
+      metadata: (r.metadata as Record<string, unknown>) || {},
+    }));
+
+    logger.info("Keyword fallback search completed", { resultsCount: items.length });
+    return items;
+  } catch (error) {
+    logger.error("Keyword fallback search error", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return [];
+  }
+}
+
+/**
  * Perform regulatory compliance search using exact SQL matching
  * Triggered when query contains regulatory citations
  */
@@ -164,12 +240,27 @@ async function regulatoryComplianceSearch(
       citations,
     });
 
-    // Build SQL IN clause for citations
+    // Parameterized citation lookup — sanitize user-provided values
     const supabase = getSupabaseAdmin();
+    const sanitizedCitations = citations.map((c) =>
+      c.replace(/[^a-zA-Z0-9§.\-\s/()]/g, '').trim()
+    ).filter((c) => c.length > 0);
+
+    if (sanitizedCitations.length === 0) {
+      return [];
+    }
+
     const { data: results, error } = await supabase
       .from('compliance_matrix')
       .select('id, type, content, source, metadata')
-      .or(`regulation_id.in.(${citations.join(",")}),regulation_citation.in.(${citations.join(",")})`);
+      .or(
+        sanitizedCitations
+          .map((_, i) => `regulation_id.eq.${sanitizedCitations[i]}`)
+          .concat(
+            sanitizedCitations.map((_, i) => `regulation_citation.eq.${sanitizedCitations[i]}`)
+          )
+          .join(',')
+      );
 
     if (error) {
       throw new Error(`Compliance search failed: ${error.message}`);
@@ -219,13 +310,20 @@ export async function hybridSearch(
       citations: regulatoryCitations,
     });
 
-    // Run both searches in parallel
-    const [vectorResults, complianceResults] = await Promise.all([
-      retrieveContext(query, topK),
-      regulatoryCitations.length > 0
-        ? regulatoryComplianceSearch(regulatoryCitations)
-        : Promise.resolve([]),
-    ]);
+    // Run both searches in parallel; fall back to keyword search if vector fails
+    let vectorResults: KnowledgeItem[];
+    try {
+      vectorResults = await retrieveContext(query, topK);
+    } catch (vectorError) {
+      logger.warn("Vector search failed, falling back to keyword search", {
+        error: vectorError instanceof Error ? vectorError.message : String(vectorError),
+      });
+      vectorResults = await keywordFallbackSearch(query, topK);
+    }
+
+    const complianceResults = regulatoryCitations.length > 0
+      ? await regulatoryComplianceSearch(regulatoryCitations)
+      : [];
 
     // Merge and deduplicate results
     const itemMap = new Map<string, KnowledgeItem>();
@@ -271,11 +369,18 @@ export async function hybridSearch(
       executionTime,
     };
   } catch (error) {
-    logger.error("Hybrid search failed", {
+    logger.error("Hybrid search failed completely, returning empty results", {
       error: error instanceof Error ? error.message : String(error),
       queryLength: query.length,
     });
-    throw error;
+
+    // Never throw — return empty result set for graceful degradation
+    return {
+      items: [],
+      vectorResults: 0,
+      sqlResults: 0,
+      executionTime: Date.now() - startTime,
+    };
   }
 }
 
@@ -414,8 +519,52 @@ CRITICAL: You MUST base your response ONLY on the provided knowledge context. Do
 }
 
 /**
+ * Fetch OrgProfile for a tenant from Supabase
+ * Returns null if not found (graceful degradation)
+ */
+async function fetchOrgProfile(tenantId: string): Promise<OrgProfile | null> {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("org_profiles")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .single();
+
+    if (error || !data) {
+      logger.warn("OrgProfile not found for tenant, using defaults", { tenantId });
+      return null;
+    }
+
+    return {
+      id: data.id,
+      tenantId: data.tenant_id,
+      legalName: data.org_name,
+      description: "",
+      website: "",
+      sector: data.sector as OrgProfile["sector"],
+      employees: data.employee_count ?? 0,
+      annualRevenue: (data.profile_data as Record<string, unknown>)?.annual_revenue as number ?? 0,
+      headquartersState: data.state as OrgProfile["headquartersState"],
+      dataHandlingCategory: (data.profile_data as Record<string, unknown>)?.data_handling_category as string ?? "none",
+      criticality: (data.profile_data as Record<string, unknown>)?.criticality as string ?? "medium",
+      industryCompliance: (data.profile_data as Record<string, unknown>)?.industry_compliance as string[] ?? [],
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at),
+    } as OrgProfile;
+  } catch (error) {
+    logger.error("Failed to fetch OrgProfile", {
+      error: error instanceof Error ? error.message : String(error),
+      tenantId,
+    });
+    return null;
+  }
+}
+
+/**
  * Complete RAG pipeline: embed query → hybrid search → generate response
  * One-shot function for full retrieval-augmented generation flow
+ * Now includes OrgProfile context and recommendation validation
  */
 export async function ragPipeline(input: {
   query: string;
@@ -431,6 +580,7 @@ export async function ragPipeline(input: {
     sqlResults: number;
     executionTime: number;
   };
+  validationFlags?: string[];
 }> {
   const { query, systemPrompt, tenantId, conversationId, topK = 8 } = input;
 
@@ -441,33 +591,79 @@ export async function ragPipeline(input: {
       tenantId,
     });
 
-    // Step 1: Hybrid search
-    const searchResult = await hybridSearch(query, topK);
+    // Step 1: Fetch OrgProfile and run hybrid search in parallel
+    const [searchResult, orgProfile] = await Promise.all([
+      hybridSearch(query, topK),
+      fetchOrgProfile(tenantId),
+    ]);
 
-    // Step 2: Generate response with context
+    // Step 2: Build sector-aware system prompt if OrgProfile available
+    let enrichedPrompt = systemPrompt;
+    if (orgProfile) {
+      const sectorContext = getSectorPrompt(orgProfile.sector, orgProfile);
+      enrichedPrompt = `${systemPrompt}\n\n${sectorContext}`;
+
+      logger.info("Enriched prompt with OrgProfile context", {
+        tenantId,
+        sector: orgProfile.sector,
+        employees: orgProfile.employees,
+        revenue: orgProfile.annualRevenue,
+      });
+    }
+
+    // Step 3: Generate response with enriched context
     const responseResult = await generateResponse({
       query,
       context: searchResult.items,
-      systemPrompt,
+      systemPrompt: enrichedPrompt,
       tenantId,
       conversationId,
     });
 
+    // Step 4: Validate recommendation if OrgProfile available
+    let finalResponse = responseResult.response;
+    let validationFlags: string[] | undefined;
+
+    if (orgProfile) {
+      const validation = validateRecommendation(finalResponse, orgProfile);
+      if (!validation.valid) {
+        finalResponse = validation.validatedText;
+        validationFlags = validation.flags.map((f) => f.type);
+
+        logger.warn("Recommendation validation flags appended", {
+          tenantId,
+          flags: validationFlags,
+        });
+      }
+    }
+
     return {
-      response: responseResult.response,
+      response: finalResponse,
       citations: responseResult.citations,
       searchMetrics: {
         vectorResults: searchResult.vectorResults,
         sqlResults: searchResult.sqlResults,
         executionTime: searchResult.executionTime,
       },
+      validationFlags,
     };
   } catch (error) {
-    logger.error("RAG pipeline failed", {
+    logger.error("RAG pipeline failed — returning degraded response", {
       error: error instanceof Error ? error.message : String(error),
       tenantId,
       queryLength: query.length,
     });
-    throw error;
+
+    // Never throw — return safe degraded response
+    return {
+      response: "Our advisory system is temporarily unavailable. Please try again shortly.",
+      citations: [],
+      searchMetrics: {
+        vectorResults: 0,
+        sqlResults: 0,
+        executionTime: 0,
+      },
+      validationFlags: ["degraded"],
+    };
   }
 }
