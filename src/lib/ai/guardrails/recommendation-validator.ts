@@ -62,7 +62,7 @@ function extractDollarAmounts(text: string): number[] {
   // Reset regex state
   const pattern = new RegExp(DOLLAR_PATTERN.source, DOLLAR_PATTERN.flags);
   while ((match = pattern.exec(text)) !== null) {
-    amounts.push(parseDollarAmount(match[1], match[2]));
+    amounts.push(parseDollarAmount(match[1] ?? '0', match[2]));
   }
 
   return amounts;
