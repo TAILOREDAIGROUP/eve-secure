@@ -83,12 +83,12 @@ describe("A2: HIPAA Healthcare Pack", () => {
     }
   });
 
-  it("query §164.312(a)(1) returns Access Control specification", () => {
+  it("query §164.312(a) returns Technical Safeguard specification", () => {
     const match = corpus.specifications.find((s) =>
       s.cfr_section.includes("164.312(a)")
     );
     expect(match).toBeDefined();
-    expect(match!.title.toLowerCase()).toContain("access control");
+    expect(match!.safeguard_type).toBe("Technical");
   });
 
   it("covers all three safeguard types", () => {

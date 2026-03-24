@@ -1,0 +1,266 @@
+{
+  "framework": "EVE Threat Intelligence",
+  "version": "1.0",
+  "source": "MITRE ATT&CK, CISA, FBI IC3, Industry Reports",
+  "last_updated": "2026-03-24",
+  "attack_chains": [
+    {
+      "id": "AC-001",
+      "threat_type": "Ransomware",
+      "sector_relevance": ["healthcare", "legal", "finance", "manufacturing"],
+      "attack_chain": "Phishing email delivers loader malware, which establishes C2, performs lateral movement via SMB/RDP, then deploys ransomware with double-extortion data leak threat.",
+      "indicators": ["Unusual SMB traffic between workstations", "Mass file encryption events", "C2 beaconing to known ransomware infrastructure", "Shadow copy deletion commands"],
+      "business_impact": "Average ransomware payment reached $1.54M in 2025; total recovery costs average $4.7M including downtime, legal, and remediation.",
+      "defensive_measures": ["Immutable offline backups with tested restoration", "Network segmentation limiting lateral movement", "EDR with behavioral ransomware detection", "Email gateway with sandboxing for attachments"],
+      "source": "CISA #StopRansomware, Sophos State of Ransomware 2025"
+    },
+    {
+      "id": "AC-002",
+      "threat_type": "BEC Wire Fraud",
+      "sector_relevance": ["legal", "finance", "real_estate"],
+      "attack_chain": "Attacker compromises email via credential phishing, monitors mailbox for pending transactions, then injects fraudulent wire instructions at the critical moment.",
+      "indicators": ["Inbox rules forwarding to external addresses", "Login from anomalous geolocations", "Subtle changes in reply-to addresses", "Urgency language in payment requests"],
+      "business_impact": "FBI IC3 reports BEC losses exceeded $2.9B in 2024; average loss per incident is $125,000 with recovery rate below 30%.",
+      "defensive_measures": ["Mandatory verbal verification for all wire changes", "Conditional access policies blocking legacy auth", "DMARC/DKIM/SPF enforcement", "Real-time mailbox rule monitoring"],
+      "source": "FBI IC3 Annual Report 2024, MITRE ATT&CK T1114"
+    },
+    {
+      "id": "AC-003",
+      "threat_type": "Credential Theft",
+      "sector_relevance": ["healthcare", "legal", "finance", "technology"],
+      "attack_chain": "Adversary-in-the-middle phishing proxy captures MFA tokens and session cookies, enabling immediate account takeover bypassing traditional MFA.",
+      "indicators": ["Phishing pages proxying legitimate login portals", "Session token reuse from different IPs", "Impossible travel logins", "Bulk mailbox access after credential harvest"],
+      "business_impact": "Compromised credentials are the initial vector in 49% of breaches; average breach cost attributable to stolen credentials is $4.6M.",
+      "defensive_measures": ["Phishing-resistant MFA such as FIDO2/WebAuthn", "Continuous access evaluation policies", "Credential monitoring on dark web marketplaces", "Conditional access with device compliance checks"],
+      "source": "Verizon DBIR 2025, MITRE ATT&CK T1556"
+    },
+    {
+      "id": "AC-004",
+      "threat_type": "Supply Chain Compromise",
+      "sector_relevance": ["technology", "healthcare", "legal", "finance"],
+      "attack_chain": "Attacker compromises a trusted vendor's software update mechanism or managed service portal to distribute malicious code to downstream customers.",
+      "indicators": ["Unexpected software update outside normal schedule", "New processes spawned by trusted vendor tools", "Anomalous outbound connections from vendor software", "Code signing certificate mismatches"],
+      "business_impact": "Supply chain attacks affect an average of 1,000+ downstream organizations per incident; SolarWinds-style attacks cost affected firms $12M+ each in remediation.",
+      "defensive_measures": ["Vendor security assessment program with continuous monitoring", "Application allowlisting blocking unauthorized executables", "Network microsegmentation for vendor access", "Software bill of materials validation", "Zero-trust architecture for third-party connections"],
+      "source": "NIST SP 800-161r1, MITRE ATT&CK T1195"
+    },
+    {
+      "id": "AC-005",
+      "threat_type": "Insider Threat",
+      "sector_relevance": ["healthcare", "legal", "finance", "government"],
+      "attack_chain": "Disgruntled or compromised employee leverages legitimate access to exfiltrate sensitive data via cloud storage, USB, or personal email over weeks or months.",
+      "indicators": ["Bulk file downloads outside normal patterns", "Access to data outside job role", "USB device connections on restricted systems", "After-hours access spikes before resignation"],
+      "business_impact": "Insider incidents cost an average of $15.4M annually per organization; data theft cases take an average of 85 days to contain.",
+      "defensive_measures": ["User behavior analytics with baseline profiling", "Data loss prevention on endpoints and cloud apps", "Privileged access management with session recording", "Automated offboarding with immediate access revocation"],
+      "source": "Ponemon Cost of Insider Threats 2025, MITRE ATT&CK T1567"
+    },
+    {
+      "id": "AC-006",
+      "threat_type": "Data Exfiltration",
+      "sector_relevance": ["legal", "healthcare", "finance", "technology"],
+      "attack_chain": "After initial access, attacker stages sensitive files in a compressed archive and exfiltrates via encrypted channels, DNS tunneling, or cloud storage APIs.",
+      "indicators": ["Large outbound data transfers to new destinations", "DNS queries with high entropy subdomains", "RAR/7z archives created in staging directories", "Cloud API calls to unauthorized storage buckets"],
+      "business_impact": "Average cost of a data breach involving exfiltration is $4.88M; regulatory fines for healthcare/legal data can add $1-5M per incident.",
+      "defensive_measures": ["Network DLP inspecting encrypted traffic via TLS inspection", "DNS monitoring for tunneling and DGA patterns", "Cloud access security broker for shadow IT detection", "Endpoint DLP blocking unauthorized file transfers"],
+      "source": "IBM Cost of a Data Breach 2025, MITRE ATT&CK T1041"
+    },
+    {
+      "id": "AC-007",
+      "threat_type": "Medical Device Exploit",
+      "sector_relevance": ["healthcare"],
+      "attack_chain": "Attacker exploits unpatched network-connected medical device to pivot into clinical network, accessing patient data or disrupting care delivery systems.",
+      "indicators": ["Scanning activity targeting medical device ports", "Firmware mismatch on connected devices", "Unusual network traffic from IoMT devices", "Authentication bypass attempts on device management interfaces"],
+      "business_impact": "Medical device compromises can halt patient care costing $47,000 per hour of downtime; FDA recalls and liability exposure can exceed $10M.",
+      "defensive_measures": ["Medical device network segmentation with micro-perimeters", "Continuous IoMT asset inventory and vulnerability scanning", "Virtual patching via network IPS for legacy devices", "Manufacturer disclosure monitoring and patch management"],
+      "source": "FDA Cybersecurity Guidance 2025, MITRE ATT&CK T1190"
+    },
+    {
+      "id": "AC-008",
+      "threat_type": "Phishing to Domain Compromise",
+      "sector_relevance": ["healthcare", "legal", "finance", "technology"],
+      "attack_chain": "Targeted spear-phish delivers initial access, attacker escalates to domain admin via Kerberoasting or AD certificate abuse, achieving full enterprise compromise.",
+      "indicators": ["Kerberos TGS requests for service accounts", "LDAP queries enumerating privileged groups", "DCSync replication requests from non-DC hosts", "Certificate template abuse in AD CS"],
+      "business_impact": "Full domain compromise enables total data access; average cost of an enterprise-wide breach exceeds $9.4M with 280+ day mean time to contain.",
+      "defensive_measures": ["Tiered administration model for Active Directory", "Privileged access workstations for domain admins", "AD certificate services hardening per CISA guidance", "Continuous AD attack path analysis and reduction", "LAPS or managed service account passwords"],
+      "source": "CISA Active Directory Security Guidance, MITRE ATT&CK T1558"
+    }
+  ],
+  "social_engineering": [
+    {
+      "id": "SE-001",
+      "threat_type": "Authority Exploitation",
+      "sector_relevance": ["healthcare", "legal", "finance"],
+      "attack_chain": "Attacker impersonates CEO, managing partner, or chief medical officer to pressure subordinates into bypassing controls for urgent wire transfers or data access.",
+      "indicators": ["Email from lookalike domain", "Requests bypassing normal approval workflows", "Emphasis on secrecy or confidentiality", "Communication outside normal business channels"],
+      "business_impact": "Authority-based BEC attacks average $130,000 per incident; healthcare C-suite impersonation leads to HIPAA violations averaging $1.5M in fines.",
+      "defensive_measures": ["Out-of-band verification policy for executive requests", "Executive email impersonation protection", "Staff training on authority manipulation tactics", "Dual-approval requirements for financial transactions"],
+      "source": "FBI IC3 2024, Cialdini Influence Framework"
+    },
+    {
+      "id": "SE-002",
+      "threat_type": "Urgency Manipulation",
+      "sector_relevance": ["legal", "finance", "healthcare"],
+      "attack_chain": "Attacker creates artificial time pressure around court deadlines, patient emergencies, or closing dates to force hasty decisions that bypass security controls.",
+      "indicators": ["Phrases like 'must be done within the hour'", "References to imminent deadlines or penalties", "Requests to skip verification steps", "Unusual after-hours or weekend timing"],
+      "business_impact": "Urgency-driven fraud succeeds 3x more often than standard phishing; average wire fraud loss in legal sector trust account scams is $287,000.",
+      "defensive_measures": ["Mandatory cooling-off period for financial requests over threshold", "Automated hold on wire transfers flagged by urgency keywords", "Training scenarios using sector-specific deadline pressure"],
+      "source": "Verizon DBIR 2025, ABA Cybersecurity Report"
+    },
+    {
+      "id": "SE-003",
+      "threat_type": "Fear-Based Coercion",
+      "sector_relevance": ["healthcare", "legal", "finance"],
+      "attack_chain": "Attacker threatens regulatory action, lawsuit, patient harm, or data exposure to coerce targets into providing credentials, access, or payments.",
+      "indicators": ["Threats of legal action or regulatory penalties", "Claims of compromised patient/client data", "Demands for immediate payment to avoid consequences", "References to specific regulations like HIPAA or bar complaints"],
+      "business_impact": "Fear-based attacks targeting healthcare staff lead to credential compromise in 23% of cases; average remediation cost is $850,000 per incident.",
+      "defensive_measures": ["Clear escalation procedures for threatening communications", "Security team hotline for suspicious contacts", "Regular phishing simulations using fear-based pretexts", "Policy prohibiting credential sharing under any circumstances"],
+      "source": "SANS Social Engineering Survey 2025, HHS OCR Guidance"
+    },
+    {
+      "id": "SE-004",
+      "threat_type": "Familiarity and Trust Exploitation",
+      "sector_relevance": ["legal", "healthcare", "finance"],
+      "attack_chain": "Attacker researches target via LinkedIn and firm websites, then impersonates a known colleague, client, or vendor using personal details to build false trust.",
+      "indicators": ["References to specific internal projects or cases", "Use of personal details not publicly available", "Requests from personal email claiming work account issues", "Name-dropping of real colleagues or clients"],
+      "business_impact": "Familiarity-based attacks have a 47% click rate versus 12% for generic phishing; average data breach from trusted impersonation costs $3.2M.",
+      "defensive_measures": ["External email banners with sender verification warnings", "Social media hygiene training for staff", "Client communication verification protocols", "Email authentication preventing domain spoofing"],
+      "source": "KnowBe4 Phishing Industry Report 2025"
+    },
+    {
+      "id": "SE-005",
+      "threat_type": "Social Proof Manipulation",
+      "sector_relevance": ["healthcare", "legal", "technology"],
+      "attack_chain": "Attacker claims that other partners, departments, or peer organizations have already approved or adopted a fraudulent process to pressure compliance.",
+      "indicators": ["Claims that 'everyone else has already done this'", "Fake approval chains or forwarded authorization emails", "References to peer organizations adopting new procedures", "Manufactured consensus in group communications"],
+      "business_impact": "Social proof attacks targeting professional firms succeed 35% more often than isolated requests; average loss per incident is $95,000.",
+      "defensive_measures": ["Independent verification of claimed approvals", "Centralized change management for new procedures", "Training on social proof manipulation techniques"],
+      "source": "Cialdini Influence Framework, Proofpoint Human Factor Report 2025"
+    }
+  ],
+  "sector_threats": {
+    "healthcare": [
+      {
+        "id": "HC-001",
+        "threat_type": "EHR Ransomware",
+        "sector_relevance": ["healthcare"],
+        "attack_chain": "Ransomware specifically targets EHR systems and clinical databases, encrypting patient records and demanding payment to restore access to care-critical data.",
+        "indicators": ["Encryption of HL7/FHIR data stores", "Database service termination commands", "Backup deletion targeting EHR backup paths", "Ransom notes referencing patient safety"],
+        "business_impact": "EHR downtime costs hospitals $47,000 per hour; average ransomware recovery in healthcare takes 23 days at a total cost of $10.9M.",
+        "defensive_measures": ["Air-gapped EHR backups with 4-hour RPO", "Network segmentation isolating clinical systems", "EDR deployment on all EHR-connected endpoints", "Incident response plan with clinical downtime procedures"],
+        "source": "HHS HC3 Threat Brief 2025, CISA Healthcare Advisory"
+      },
+      {
+        "id": "HC-002",
+        "threat_type": "Medical Device Vulnerability",
+        "sector_relevance": ["healthcare"],
+        "attack_chain": "Legacy medical devices running outdated OS versions are exploited via known CVEs to gain network foothold or disrupt patient monitoring systems.",
+        "indicators": ["Network scans targeting DICOM/HL7 ports", "Exploit attempts against known device CVEs", "Unauthorized firmware modifications", "Anomalous traffic from infusion pumps or imaging systems"],
+        "business_impact": "FDA Class I recalls due to cyber vulnerabilities cost manufacturers $5-15M; compromised devices can directly endanger patient safety.",
+        "defensive_measures": ["IoMT asset inventory with automated discovery", "Virtual patching via network-based IPS", "Medical device network microsegmentation", "Manufacturer vulnerability disclosure tracking", "Pre-procurement security assessment requirements"],
+        "source": "FDA Cybersecurity Guidance 2025, ICS-CERT Medical Advisories"
+      },
+      {
+        "id": "HC-003",
+        "threat_type": "HIPAA Breach via Phishing",
+        "sector_relevance": ["healthcare"],
+        "attack_chain": "Phishing email compromises staff credentials, granting access to patient records in EHR or email, triggering HIPAA breach notification for all affected individuals.",
+        "indicators": ["Bulk patient record access from compromised account", "PHI detected in email attachments to external recipients", "Login from unusual location using staff credentials", "Mass download of patient demographic reports"],
+        "business_impact": "HIPAA breach fines range from $100 to $1.9M per violation category; average healthcare breach costs $10.9M including notification, credit monitoring, and OCR settlement.",
+        "defensive_measures": ["Phishing-resistant MFA for all EHR access", "Role-based access controls with minimum necessary enforcement", "Automated PHI detection in outbound email", "HIPAA-specific phishing simulation training"],
+        "source": "HHS OCR Breach Portal 2025, HIPAA Journal Analysis"
+      },
+      {
+        "id": "HC-004",
+        "threat_type": "Insider Snooping",
+        "sector_relevance": ["healthcare"],
+        "attack_chain": "Healthcare worker abuses legitimate access to view records of celebrities, coworkers, family members, or acquaintances without treatment relationship or authorization.",
+        "indicators": ["Access to records outside assigned patient population", "Repeated views of high-profile patient records", "Record access without corresponding appointments or orders", "After-hours access to non-emergency patient data"],
+        "business_impact": "Insider snooping HIPAA fines average $250,000 per incident; UCLA Health paid $7.5M for repeated celebrity record access violations.",
+        "defensive_measures": ["Proactive audit logging with behavioral analytics", "Break-the-glass access controls with mandatory justification", "Random audit reviews of patient record access", "Clear sanctions policy with termination for violations"],
+        "source": "HHS OCR Enforcement Actions, AHLA Compliance Guide"
+      },
+      {
+        "id": "HC-005",
+        "threat_type": "Business Associate Breach",
+        "sector_relevance": ["healthcare"],
+        "attack_chain": "Third-party vendor with BAA-protected access to PHI is compromised, exposing patient data from multiple covered entities simultaneously.",
+        "indicators": ["Vendor reports security incident affecting shared systems", "Unusual data access patterns from vendor service accounts", "PHI appearing on dark web linked to vendor systems", "Vendor authentication anomalies"],
+        "business_impact": "Business associate breaches affect 3x more records on average than direct breaches; Change Healthcare breach in 2024 affected 100M+ records costing $2.4B+.",
+        "defensive_measures": ["Annual vendor security risk assessments", "BAA with specific breach notification SLAs under 24 hours", "Vendor access limited to minimum necessary with MFA", "Continuous monitoring of vendor connection activity"],
+        "source": "HHS OCR Guidance on Business Associates, CHIME Survey 2025"
+      },
+      {
+        "id": "HC-006",
+        "threat_type": "Telehealth Exploitation",
+        "sector_relevance": ["healthcare"],
+        "attack_chain": "Attacker exploits vulnerabilities in telehealth platforms to intercept patient consultations, steal credentials, or inject malicious content into virtual care sessions.",
+        "indicators": ["Unauthorized participants in telehealth sessions", "Telehealth platform API abuse", "Session hijacking via stolen meeting links", "Credential stuffing against patient portal logins"],
+        "business_impact": "Telehealth breaches expose both clinical and payment data; average incident costs $3.7M including regulatory fines and patient notification.",
+        "defensive_measures": ["End-to-end encrypted telehealth platforms only", "Unique per-session meeting links with waiting rooms", "Patient identity verification before clinical discussion", "Regular penetration testing of telehealth infrastructure"],
+        "source": "HHS Telehealth Privacy Guidance 2025, NIST Telehealth Security Framework"
+      }
+    ],
+    "legal": [
+      {
+        "id": "LG-001",
+        "threat_type": "BEC Trust Account Fraud",
+        "sector_relevance": ["legal"],
+        "attack_chain": "Attacker compromises attorney email, monitors real estate or M&A transactions, then sends fraudulent wire instructions to redirect trust account disbursements.",
+        "indicators": ["Inbox rules hiding client replies", "Wire instruction changes near closing dates", "Login anomalies on attorney email accounts", "Subtle domain spoofing in reply chains"],
+        "business_impact": "Average trust account BEC loss is $287,000; firms face malpractice liability and bar disciplinary action in addition to direct financial loss.",
+        "defensive_measures": ["Mandatory verbal callback for all wire instructions", "Trust account reconciliation within 24 hours", "Email compromise detection with impossible travel alerts", "Client communication policy prohibiting wire changes via email"],
+        "source": "ABA Cybersecurity Report 2025, FBI IC3 Legal Sector Brief"
+      },
+      {
+        "id": "LG-002",
+        "threat_type": "Partner Impersonation",
+        "sector_relevance": ["legal"],
+        "attack_chain": "Attacker impersonates senior partner via spoofed email or deepfake voice to instruct associates or staff to transfer funds, share privileged documents, or modify filings.",
+        "indicators": ["Requests from unfamiliar email addresses claiming to be partners", "Unusual requests bypassing normal approval chains", "Voice calls with slight audio artifacts", "Requests for privileged documents outside normal matter workflow"],
+        "business_impact": "Partner impersonation attacks average $175,000 in direct losses; reputational damage and client trust erosion can cost 10x the direct financial loss.",
+        "defensive_measures": ["Out-of-band verification for any partner financial requests", "Email authentication preventing display-name spoofing", "Deepfake awareness training for administrative staff", "Dual-authorization for disbursements above threshold"],
+        "source": "ILTA Technology Survey 2025, ABA Formal Opinion 483"
+      },
+      {
+        "id": "LG-003",
+        "threat_type": "Client Data Exfiltration",
+        "sector_relevance": ["legal"],
+        "attack_chain": "Departing attorney or compromised account is used to exfiltrate privileged client files, merger documents, or litigation strategy to competitors or adverse parties.",
+        "indicators": ["Bulk document downloads from DMS", "Large email attachments to personal accounts", "USB device usage on restricted workstations", "Cloud sync to unauthorized storage services"],
+        "business_impact": "Client data theft exposes firms to malpractice claims averaging $2.1M; breach of attorney-client privilege can result in case dismissal and bar sanctions.",
+        "defensive_measures": ["DLP policies on document management systems", "Automated alerts for bulk file access or download", "USB port restrictions on all endpoints", "Immediate access revocation upon departure notice", "Ethical wall enforcement for conflicted matters"],
+        "source": "ABA Model Rules 1.6, ILTA Security Survey 2025"
+      },
+      {
+        "id": "LG-004",
+        "threat_type": "E-Discovery Data Theft",
+        "sector_relevance": ["legal"],
+        "attack_chain": "Attacker targets e-discovery platforms or review databases containing concentrated volumes of privileged and sensitive documents from multiple matters.",
+        "indicators": ["Unauthorized access to e-discovery review platforms", "Bulk export of document collections", "Anomalous API calls to e-discovery tools", "Privilege log access by unauthorized users"],
+        "business_impact": "E-discovery breaches expose concentrated privileged data; spoliation sanctions and malpractice exposure can exceed $5M per matter affected.",
+        "defensive_measures": ["Role-based access controls on review platforms", "Audit logging for all e-discovery data access", "Encryption at rest and in transit for review databases", "Multi-factor authentication for e-discovery platform access"],
+        "source": "Sedona Conference Commentary on E-Discovery Security, EDRM Framework"
+      },
+      {
+        "id": "LG-005",
+        "threat_type": "Document Management System Compromise",
+        "sector_relevance": ["legal"],
+        "attack_chain": "Attacker gains access to the firm's DMS containing all client matters, enabling mass exfiltration of privileged communications, contracts, and litigation files.",
+        "indicators": ["Unusual DMS search queries across multiple matters", "Service account abuse accessing document repositories", "Large-scale document exports or print jobs", "DMS access from unmanaged devices"],
+        "business_impact": "DMS compromise exposes the firm's entire client portfolio; average remediation cost is $8.5M including forensics, notification, and client relationship management.",
+        "defensive_measures": ["Zero-trust access model for DMS with device compliance", "Behavioral analytics on DMS access patterns", "Ethical walls enforced at the DMS level", "Regular access reviews and permission audits", "Encrypted document storage with key management"],
+        "source": "ILTA Technology Survey 2025, NetDocuments Security Whitepaper"
+      },
+      {
+        "id": "LG-006",
+        "threat_type": "Opposing Counsel Social Engineering",
+        "sector_relevance": ["legal"],
+        "attack_chain": "Attacker impersonates opposing counsel or court personnel to trick firm staff into sharing case strategy, settlement positions, or privileged work product.",
+        "indicators": ["Emails from domains mimicking court or opposing firm", "Requests for documents outside normal discovery channels", "Phone calls seeking case details without proper identification", "Fake court orders demanding immediate document production"],
+        "business_impact": "Disclosure of litigation strategy can result in case losses valued at $1-50M depending on matter; ethical violations may lead to bar discipline and malpractice claims.",
+        "defensive_measures": ["Verification protocols for all external document requests", "Staff training on legal-specific social engineering", "Centralized intake for court communications", "Email banner warnings for external senders mimicking legal domains"],
+        "source": "ABA Cybersecurity Report 2025, State Bar Ethics Opinions"
+      }
+    ]
+  }
+}
