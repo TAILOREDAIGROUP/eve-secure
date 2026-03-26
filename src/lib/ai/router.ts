@@ -210,6 +210,44 @@ export async function routeAndCall(args: {
 }
 
 /**
+ * Route and stream an LLM call through the appropriate provider.
+ * Yields StreamEvents as tokens arrive.
+ */
+export async function* routeAndStream(args: {
+  query: string;
+  systemPrompt: string;
+  tenantId: string;
+  conversationId?: string;
+  sensitivityOverride?: SensitivityLevel;
+  maxTokens?: number;
+}): AsyncGenerator<import('./litellm').StreamEvent> {
+  const { query, systemPrompt, tenantId, conversationId, sensitivityOverride, maxTokens } = args;
+
+  const resolution = await resolveProvider(tenantId, sensitivityOverride);
+
+  logger.info('LLM streaming routing decision', {
+    tenantId,
+    provider: resolution.provider,
+    sensitivity: resolution.sensitivity,
+    reason: resolution.reason,
+    conversationId,
+    queryLength: query.length,
+  });
+
+  const { callModelStreaming } = await import('./litellm');
+
+  yield* callModelStreaming({
+    query,
+    systemPrompt,
+    tenantId,
+    conversationId,
+    provider: resolution.provider,
+    providerConfig: resolution.config,
+    maxTokens,
+  });
+}
+
+/**
  * Get provider info for display in admin panel
  */
 export function getProviderDisplayInfo(provider: LLMProvider): {

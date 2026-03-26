@@ -275,6 +275,147 @@ export async function callModel(args: {
 }
 
 /**
+ * Streaming event types emitted during model streaming
+ */
+export type StreamEvent =
+  | { type: 'start'; model: string; classification: QueryClassification }
+  | { type: 'delta'; content: string }
+  | { type: 'complete'; model: string; inputTokens: number; outputTokens: number; cost: number; latency: number }
+  | { type: 'error'; message: string; errorId: string; degraded: boolean };
+
+/**
+ * Stream a model call via Anthropic's streaming API with automatic fallback.
+ * Yields StreamEvents as tokens arrive.
+ * Falls through model tiers on failure (same logic as callModel).
+ */
+export async function* callModelStreaming(args: {
+  query: string;
+  systemPrompt: string;
+  tenantId: string;
+  conversationId?: string;
+  provider?: LLMProvider;
+  providerConfig?: ProviderConfig;
+  maxTokens?: number;
+}): AsyncGenerator<StreamEvent> {
+  const { query, systemPrompt, tenantId, conversationId, maxTokens = 4096 } = args;
+  const startTime = Date.now();
+  const classification = classifyQuery(query);
+
+  const config: ProviderConfig = args.providerConfig ?? {
+    provider: 'anthropic',
+    apiKey: process.env.ANTHROPIC_API_KEY ?? '',
+    modelMap: {
+      fast: 'claude-3-5-haiku-20241022',
+      standard: 'claude-3-5-sonnet-20241022',
+      complex: 'claude-3-5-opus-20241022',
+    },
+  };
+
+  const provider = args.provider ?? 'anthropic';
+  const models = getModelForClassification(classification, config);
+  let lastError: Error | null = null;
+
+  for (const model of models) {
+    try {
+      const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {};
+
+      if (provider === 'openrouter') {
+        clientConfig.apiKey = config.apiKey || process.env.OPENROUTER_API_KEY;
+        clientConfig.baseURL = config.baseUrl ?? 'https://openrouter.ai/api/v1';
+      } else {
+        clientConfig.apiKey = config.apiKey || process.env.ANTHROPIC_API_KEY;
+      }
+
+      const client = new Anthropic(clientConfig);
+
+      logger.info("LLM streaming call initiated", {
+        provider,
+        model,
+        classification,
+        tenantId,
+        conversationId,
+        queryLength: query.length,
+      });
+
+      yield { type: 'start', model, classification };
+
+      const stream = client.messages.stream({
+        model,
+        max_tokens: maxTokens,
+        system: systemPrompt,
+        messages: [{ role: "user", content: query }],
+      });
+
+      let inputTokens = 0;
+      let outputTokens = 0;
+
+      for await (const event of stream) {
+        if (event.type === 'content_block_delta') {
+          const delta = event.delta;
+          if ('text' in delta) {
+            yield { type: 'delta', content: delta.text };
+          }
+        }
+      }
+
+      // Get final message for usage stats
+      const finalMessage = await stream.finalMessage();
+      inputTokens = finalMessage.usage.input_tokens;
+      outputTokens = finalMessage.usage.output_tokens;
+
+      const latency = Date.now() - startTime;
+      const cost = calculateCost(model, inputTokens, outputTokens);
+
+      logger.info("LLM streaming call success", {
+        provider,
+        model,
+        classification,
+        tenantId,
+        inputTokens,
+        outputTokens,
+        latency,
+        cost: cost.toFixed(6),
+      });
+
+      yield {
+        type: 'complete',
+        model,
+        inputTokens,
+        outputTokens,
+        cost,
+        latency,
+      };
+
+      return; // Success — don't try next model
+    } catch (error) {
+      lastError = error as Error;
+      logger.warn(`Streaming model ${model} (${provider}) failed, trying next model`, {
+        error: (error as Error).message,
+        tenantId,
+        provider,
+      });
+    }
+  }
+
+  // All models exhausted
+  const errorId = uuidv4();
+  logger.error("All streaming model fallbacks exhausted", {
+    classification,
+    tenantId,
+    provider,
+    errorId,
+    originalError: lastError?.message,
+  });
+
+  yield {
+    type: 'error',
+    message: "Our advisory system is temporarily unavailable. Please try again shortly.",
+    errorId,
+    degraded: true,
+  };
+}
+
+/**
  * Route query to optimal model (legacy — use router.routeAndCall instead)
  */
 export function routeToModel(classification: QueryClassification): string {
