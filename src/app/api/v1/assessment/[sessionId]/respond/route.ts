@@ -4,6 +4,13 @@ import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/db';
 import { requireAuth, AuthError } from '@/lib/auth/supabase-auth-server';
 import { logger } from '@/lib/logger';
+import { hybridSearch } from '@/lib/ai/rag/pipeline';
+import { getAssessmentPrompt } from '@/lib/ai/prompts/system';
+import { getSectorPrompt } from '@/lib/ai/prompts/sector-prompts';
+import { routeAndCall } from '@/lib/ai/router';
+import { buildConversationContext, type CSFSection } from '@/lib/ai/conversation-state';
+import { sanitizeInput } from '@/lib/ai/guardrails/input-sanitizer';
+import type { OrgProfile } from '@/types';
 
 
 /**
@@ -29,9 +36,9 @@ const RespondInputSchema = z.object({
 
 /**
  * Generate a sector-adapted follow-up question based on org profile and section.
- * Template-based — will be replaced by LLM later.
+ * Template fallback — used when LLM is unavailable.
  */
-function generateNextQuestion(
+function generateTemplateQuestion(
   section: NistSection,
   sector: string,
   orgName: string,
@@ -76,7 +83,6 @@ function generateNextQuestion(
     ],
   };
 
-  // Sector-specific follow-up augmentations
   let sectorSuffix = '';
   const citations: string[] = [];
 
@@ -114,11 +120,130 @@ function generateNextQuestion(
 }
 
 /**
+ * Generate next assessment question using RAG + LLM.
+ * Falls back to template if LLM fails.
+ */
+async function generateLLMQuestion(args: {
+  section: NistSection;
+  sector: string;
+  orgName: string;
+  tenantId: string;
+  sessionId: string;
+  responseText: string;
+  responseCount: number;
+  orgProfile: any;
+}): Promise<{ questionText: string; citations: string[]; generatedBy: 'llm' | 'template' }> {
+  const { section, sector, orgName, tenantId, sessionId, responseText, responseCount, orgProfile } = args;
+
+  try {
+    // Build conversation context for continuity
+    const conversationCtx = await buildConversationContext(
+      sessionId,
+      tenantId,
+      section as CSFSection
+    );
+
+    // Search knowledge base for section-relevant context
+    const searchQuery = `${section} cybersecurity assessment ${sector} organization security controls`;
+    const searchResult = await hybridSearch(searchQuery, 5);
+
+    const ragContext = searchResult.items.length > 0
+      ? searchResult.items.map((item, idx) =>
+          `[Source ${idx + 1}: ${item.source}] ${item.content}`
+        ).join('\n\n')
+      : '';
+
+    // Build the question generation prompt
+    const questionPrompt = `You are conducting a NIST CSF 2.0 cybersecurity assessment for ${orgName}, a ${sector} organization.
+
+## Current Section: ${section}
+## Questions Answered in This Section: ${responseCount}
+## User's Latest Response:
+"${responseText.substring(0, 1000)}"
+
+${conversationCtx.context ? `## Prior Assessment Context:\n${conversationCtx.context}\n` : ''}
+${ragContext ? `## Relevant Knowledge Base Context:\n${ragContext}\n` : ''}
+
+## Your Task:
+Generate the NEXT assessment question for the ${section} function. The question must:
+1. Be specific to ${orgName}'s ${sector} sector
+2. Build on the user's previous response — probe deeper or move to the next sub-area within ${section}
+3. Reference specific regulatory requirements (HIPAA, ABA rules, NIST subcategories) where applicable
+4. Be actionable and answerable by a non-technical business leader
+5. Include the relevant NIST CSF subcategory reference in brackets (e.g., [GV.OC-01])
+
+Respond with ONLY the question text. Do not add preamble, numbering, or explanation.`;
+
+    // Build sector-aware system prompt
+    let systemPrompt = getAssessmentPrompt();
+    if (orgProfile) {
+      const orgProfileTyped: OrgProfile = {
+        id: orgProfile.id,
+        tenantId: orgProfile.tenant_id,
+        legalName: orgName,
+        description: '',
+        website: '',
+        sector: sector as OrgProfile['sector'],
+        employees: orgProfile.employee_count ?? 0,
+        annualRevenue: 0,
+        headquartersState: orgProfile.state as OrgProfile['headquartersState'],
+        dataHandlingCategory: 'none',
+        criticality: 'medium',
+        industryCompliance: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const sectorContext = getSectorPrompt(sector, orgProfileTyped);
+      systemPrompt = `${systemPrompt}\n\n${sectorContext}`;
+    }
+
+    // Call LLM via routed provider
+    const result = await routeAndCall({
+      query: questionPrompt,
+      systemPrompt,
+      tenantId,
+      conversationId: sessionId,
+    });
+
+    if (result.degraded) {
+      throw new Error('LLM returned degraded response');
+    }
+
+    // Extract citations from RAG sources
+    const citations = searchResult.items.map(item => item.source);
+    citations.push(`NIST CSF 2.0 — ${section} Function`);
+
+    logger.info('LLM question generated', {
+      section,
+      sector,
+      model: result.model,
+      inputTokens: result.inputTokens,
+      outputTokens: result.outputTokens,
+      cost: result.cost.toFixed(6),
+    });
+
+    return {
+      questionText: result.content.trim(),
+      citations,
+      generatedBy: 'llm',
+    };
+  } catch (error) {
+    logger.warn('LLM question generation failed, falling back to template', {
+      error: error instanceof Error ? error.message : String(error),
+      section,
+      sector,
+    });
+
+    const template = generateTemplateQuestion(section, sector, orgName, responseCount);
+    return { ...template, generatedBy: 'template' };
+  }
+}
+
+/**
  * Calculate progress percentage based on section and response count within section.
  */
 function calculateProgress(section: NistSection, sectionResponseCount: number): number {
   const range = SECTION_PROGRESS[section];
-  // Assume ~4 questions per section for progress scaling
   const questionsPerSection = 4;
   const withinSectionProgress = Math.min(sectionResponseCount / questionsPerSection, 1);
   return Math.round(range.min + withinSectionProgress * (range.max - range.min));
@@ -126,7 +251,7 @@ function calculateProgress(section: NistSection, sectionResponseCount: number): 
 
 /**
  * POST /api/v1/assessment/[sessionId]/respond
- * Accept user response to current assessment question, generate EVE's next question.
+ * Accept user response to current assessment question, generate EVE's next question via RAG + LLM.
  */
 export async function POST(
   request: NextRequest,
@@ -135,7 +260,7 @@ export async function POST(
   const requestId = uuidv4();
 
   try {
-    // 1. Auth — Supabase Auth with explicit verification
+    // 1. Auth
     const { user, tenantId } = await requireAuth();
     if (!user) {
       return NextResponse.json(
@@ -185,6 +310,10 @@ export async function POST(
 
     const { section, responseText, questionId } = parseResult.data;
 
+    // 3. Sanitize user response
+    const sanitized = sanitizeInput(responseText);
+    const safeResponseText = sanitized.sanitized;
+
     // 3. Save user's response
     const responseId = uuidv4();
     const { error: insertError } = await db
@@ -196,8 +325,12 @@ export async function POST(
         question_id: questionId ?? null,
         section,
         question_text: `User response to ${section} question`,
-        response_text: responseText,
-        metadata: { requestId } as any,
+        response_text: safeResponseText,
+        metadata: {
+          requestId,
+          piiDetected: sanitized.piiDetected.some(Boolean),
+          injectionDetected: sanitized.injectionDetected,
+        } as any,
       } as any);
 
     if (insertError) {
@@ -227,13 +360,17 @@ export async function POST(
 
     const totalSectionResponses = sectionResponseCount ?? 1;
 
-    // 6. Generate next question (template-based)
-    const { questionText: nextQuestion, citations } = generateNextQuestion(
+    // 6. Generate next question via RAG + LLM (falls back to template)
+    const { questionText: nextQuestion, citations, generatedBy } = await generateLLMQuestion({
       section,
       sector,
       orgName,
-      totalSectionResponses
-    );
+      tenantId,
+      sessionId,
+      responseText: safeResponseText,
+      responseCount: totalSectionResponses,
+      orgProfile,
+    });
 
     // 7. Calculate progress
     const progress = calculateProgress(section, totalSectionResponses);
@@ -255,10 +392,10 @@ export async function POST(
     const { error: updateStateError } = await db
       .from('conversation_state')
       .update({
-        context_summary: `Last response in ${section}: ${responseText.substring(0, 200)}...`,
+        context_summary: `Last response in ${section}: ${safeResponseText.substring(0, 200)}...`,
         current_section_qa: {
           section,
-          lastResponse: responseText.substring(0, 500),
+          lastResponse: safeResponseText.substring(0, 500),
           responseCount: totalSectionResponses,
         } as any,
         updated_at: new Date().toISOString(),
@@ -276,6 +413,7 @@ export async function POST(
       section,
       progress,
       responseId,
+      generatedBy,
     });
 
     return NextResponse.json({
@@ -284,7 +422,7 @@ export async function POST(
       section,
       progress,
       citations,
-      generatedBy: 'template',
+      generatedBy,
     });
   } catch (error) {
     if (error instanceof AuthError) {
