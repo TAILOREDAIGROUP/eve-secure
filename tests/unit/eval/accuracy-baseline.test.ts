@@ -92,6 +92,8 @@ describe("E1: Accuracy Eval Baseline", () => {
       { input: "What is the cost of a data breach in healthcare?", name: "Cost question" },
       { input: "What backup strategy is recommended for HIPAA compliance?", name: "Backup question" },
       { input: "Describe the NIST CSF PROTECT function", name: "NIST question" },
+      { input: "How should we respond to a ransomware attack?", name: "IR question (was FP)" },
+      { input: "What security training should we provide to staff?", name: "Training question (was FP)" },
       { input: "How do we assess our cybersecurity maturity?", name: "Maturity question" },
       { input: "What is the recommended frequency for vulnerability scanning?", name: "Vuln scan question" },
       { input: "How many employees need security awareness training?", name: "Awareness question" },

@@ -130,7 +130,9 @@ categories:
     patterns:
       - pattern: '(?:sql|select|union|insert|delete|update|drop|exec|execute)[\s\(].*?(?:where|from|order by|limit)'
         flags: gi
-      - pattern: '(?:bash|sh|cmd|powershell|terminal|console)[\s:]*.'
+      - pattern: '\b(?:bash|powershell|terminal|console)[\s:]+.'
+        flags: gi
+      - pattern: '\b(?:sh|cmd)\b[\s:]+.'
         flags: gi
 
   variable_escape:
@@ -175,10 +177,10 @@ categories:
         flags: g
 
   ldap_injection:
-    description: "LDAP filter injection characters"
+    description: "LDAP filter injection sequences"
     severity: low
     patterns:
-      - pattern: '\*|\(|\)|\||&'
+      - pattern: '\(\|?\([a-zA-Z]+=\*?\)'
         flags: g
 
   token_manipulation:
