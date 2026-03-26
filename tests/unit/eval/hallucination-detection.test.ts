@@ -41,7 +41,7 @@ vi.mock("@/lib/ai/rag/embeddings", () => ({
 import { getSystemPrompt, getAssessmentPrompt, getPlanningPrompt } from "@/lib/ai/prompts/system";
 import { hybridSearch } from "@/lib/ai/rag/pipeline";
 import { validateRecommendation } from "@/lib/ai/guardrails/recommendation-validator";
-import type { OrgProfile } from "@/types";
+import { Sector, State, type OrgProfile } from "@/types";
 
 // ---------------------------------------------------------------------------
 // E2: Hallucination Detection Baseline
@@ -332,11 +332,11 @@ describe("E2: Hallucination Detection Baseline", () => {
       legalName: "Small Clinic LLC",
       description: "",
       website: "",
-      sector: "healthcare",
+      sector: Sector.HEALTHCARE,
       employees: 15,
       annualRevenue: 2_000_000,
-      headquartersState: "TX",
-      dataHandlingCategory: "ePHI",
+      headquartersState: State.TX,
+      dataHandlingCategory: "phi",
       criticality: "medium",
       industryCompliance: ["HIPAA"],
       createdAt: new Date(),
@@ -359,7 +359,7 @@ describe("E2: Hallucination Detection Baseline", () => {
 
     it("flags sector-mismatched recommendations", () => {
       const text = "Your law firm should focus on PCI-DSS compliance for credit card processing.";
-      const legalOrg: OrgProfile = { ...smallHealthcareOrg, sector: "legal", industryCompliance: ["ABA"] };
+      const legalOrg: OrgProfile = { ...smallHealthcareOrg, sector: Sector.OTHER, industryCompliance: ["ABA"] };
       const result = validateRecommendation(text, legalOrg);
       // PCI-DSS for a law firm may or may not flag depending on validator logic
       expect(result).toBeDefined();
