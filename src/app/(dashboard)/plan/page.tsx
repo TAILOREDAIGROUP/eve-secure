@@ -273,8 +273,7 @@ export default function PlanPage() {
               key={action.id}
               action={action}
               onStatusChange={(status) => {
-                // Handle status change
-                console.log(`Action ${action.id} status changed to ${status}`);
+                // Status change handled by ActionCard optimistic update
               }}
             />
           ))

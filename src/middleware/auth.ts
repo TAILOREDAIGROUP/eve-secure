@@ -6,7 +6,7 @@ import { logger } from '@/lib/logger';
 
 /**
  * Authentication middleware for EVE Secure API
- * - Extracts tenant_id from Clerk session
+ * - Extracts tenant_id from Supabase Auth session
  * - Injects into database query context (PostgreSQL app.current_tenant_id)
  * - Checks Redis deny-list for invalidated sessions
  * - Rate limiting: 60/min authenticated, 10/min unauthenticated
@@ -33,18 +33,22 @@ function getRedisClient(): Redis {
   return redisClient;
 }
 
+const UserRole = z.enum(['super_admin', 'tenant_admin', 'user']);
+type UserRole = z.infer<typeof UserRole>;
+
 const AuthContextSchema = z.object({
   userId: z.string().uuid(),
   tenantId: z.string().uuid(),
   sessionId: z.string(),
   email: z.string().email(),
+  role: UserRole,
   mfaVerified: z.boolean(),
 });
 
 type AuthContext = z.infer<typeof AuthContextSchema>;
 
 /**
- * Extract auth context from Clerk session
+ * Extract auth context from Supabase Auth session
  * @param request - Next.js request object
  * @returns Auth context with user, tenant, and session info
  * @throws Error if authentication fails
@@ -58,6 +62,7 @@ async function extractAuthContext(request: NextRequest): Promise<AuthContext | n
       tenantId,
       sessionId: supabaseUid, // Use Supabase UID as session identifier
       email: user.email ?? '',
+      role: (user.role as UserRole) ?? 'user',
       mfaVerified: false, // Would be checked from Supabase session metadata
     };
 
@@ -70,7 +75,7 @@ async function extractAuthContext(request: NextRequest): Promise<AuthContext | n
 /**
  * Check if session is in Redis deny-list (invalidated)
  * Returns immediately (sub-millisecond lookup)
- * @param sessionId - Clerk session ID
+ * @param sessionId - Session ID
  * @returns true if session is invalidated
  */
 async function isSessionDenylisted(sessionId: string): Promise<boolean> {
@@ -80,10 +85,9 @@ async function isSessionDenylisted(sessionId: string): Promise<boolean> {
     const isDenied = await redis.get(denyKey);
     return isDenied !== null;
   } catch (error) {
-    // On Redis error, fail open (allow request)
-    // Log error for monitoring
-    logger.error('Redis deny-list check failed', { error: error instanceof Error ? error.message : String(error) });
-    return false;
+    // On Redis error, fail CLOSED (deny request) — security product must not allow invalidated sessions through
+    logger.error('Redis deny-list check failed, failing closed', { error: error instanceof Error ? error.message : String(error) });
+    return true;
   }
 }
 
@@ -138,11 +142,11 @@ async function checkRateLimit(
 
     return { current, remaining, resetAt };
   } catch (error) {
-    // On Redis error, fail open (allow request but don't count it)
-    logger.error('Rate limit check failed', { error: error instanceof Error ? error.message : String(error) });
+    // On Redis error, fail CLOSED (block request) — consistent with rate-limiter.ts
+    logger.error('Rate limit check failed, failing closed', { error: error instanceof Error ? error.message : String(error) });
     return {
-      current: 0,
-      remaining: 1,
+      current: limit + 1,
+      remaining: 0,
       resetAt: new Date(Date.now() + 60000),
     };
   }
@@ -246,7 +250,7 @@ export async function authMiddleware(request: NextRequest): Promise<NextResponse
  * @param options - Configuration options
  * @returns Wrapped handler with auth checks
  */
-export function withAuth<T extends any[], R>(
+export function withAuth<T extends unknown[], R>(
   handler: (context: AuthContext, ...args: T) => Promise<R> | R,
   options: {
     requireMFA?: boolean;
@@ -272,14 +276,14 @@ export function withAuth<T extends any[], R>(
     }
 
     // Rate limiting already handled by main middleware
-    return handler(authContext, ...(args.slice(1) as any as T));
+    return handler(authContext, ...(args.slice(1) as unknown as T));
   };
 }
 
 /**
  * Invalidate session and add to Redis deny-list
  * Called when user logs out, role changes, or account disabled
- * @param sessionId - Clerk session ID to invalidate
+ * @param sessionId - Session ID to invalidate
  * @param reason - Reason for invalidation (for logging)
  */
 export async function invalidateSessionInDenylist(
@@ -301,19 +305,34 @@ export async function invalidateSessionInDenylist(
 }
 
 /**
- * Check if user has required role/permission
- * Enforces authorization after authentication
- * @param authContext - Auth context from request
- * @param requiredRole - Role to check for
- * @returns true if user has role
+ * Role hierarchy: super_admin > tenant_admin > user
+ * A higher role implicitly satisfies a lower role check.
  */
-export async function hasRole(
+const ROLE_HIERARCHY: Record<UserRole, number> = {
+  super_admin: 3,
+  tenant_admin: 2,
+  user: 1,
+};
+
+/**
+ * Check if user has required role/permission
+ * Enforces authorization after authentication using role hierarchy.
+ * @param authContext - Auth context from request (includes role from DB)
+ * @param requiredRole - Minimum role required
+ * @returns true if user's role meets or exceeds the required role
+ */
+export function hasRole(
   authContext: AuthContext,
-  requiredRole: 'admin' | 'clinician' | 'user'
-): Promise<boolean> {
-  // Implementation would check Clerk user metadata or database
-  // Placeholder for integration
-  return true;
+  requiredRole: UserRole
+): boolean {
+  const userLevel = ROLE_HIERARCHY[authContext.role];
+  const requiredLevel = ROLE_HIERARCHY[requiredRole];
+
+  if (userLevel === undefined || requiredLevel === undefined) {
+    return false;
+  }
+
+  return userLevel >= requiredLevel;
 }
 
 /**

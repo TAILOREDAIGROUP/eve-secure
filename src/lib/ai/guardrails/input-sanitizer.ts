@@ -268,6 +268,10 @@ export function sanitizeInput(input: string): SanitizationResult {
       if (injectionResult.severity === "high") {
         throw new Error("High-severity prompt injection patterns detected");
       }
+
+      if (injectionResult.severity === "medium") {
+        throw new Error("Medium-severity prompt injection patterns detected");
+      }
     }
 
     // Sanitize HTML/script tags

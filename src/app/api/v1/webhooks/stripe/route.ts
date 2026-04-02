@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
 import { logger } from '@/lib/logger';
 import { updateTenantSubscription, type SubscriptionTier } from '@/lib/billing/stripe';
 
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 });
   }
 
-  let event: any;
+  let event: Stripe.Event;
 
   try {
     // Verify signature using Stripe SDK
@@ -58,10 +59,10 @@ export async function POST(request: NextRequest) {
     switch (event.type) {
       case 'customer.subscription.created':
       case 'customer.subscription.updated': {
-        const subscription = event.data.object;
+        const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
-        const subscriptionId = subscription.id as string;
-        const status = subscription.status as string;
+        const subscriptionId = subscription.id;
+        const status = subscription.status;
         const priceId = subscription.items?.data?.[0]?.price?.id;
         const periodEnd = new Date(subscription.current_period_end * 1000);
 
@@ -86,9 +87,9 @@ export async function POST(request: NextRequest) {
       }
 
       case 'customer.subscription.deleted': {
-        const subscription = event.data.object;
+        const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
-        const subscriptionId = subscription.id as string;
+        const subscriptionId = subscription.id;
 
         await updateTenantSubscription({
           stripeCustomerId: customerId,
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
       }
 
       case 'invoice.payment_failed': {
-        const invoice = event.data.object;
+        const invoice = event.data.object as Stripe.Invoice;
         logger.warn('Payment failed', {
           customerId: invoice.customer,
           invoiceId: invoice.id,

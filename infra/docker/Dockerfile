@@ -1,4 +1,4 @@
-# Multi-stage build for production
+# Multi-stage build for production (Next.js standalone output)
 FROM node:20-alpine AS builder
 
 WORKDIR /build
@@ -9,13 +9,16 @@ RUN apk add --no-cache python3 make g++
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production && \
+# Install all dependencies (dev included for build)
+RUN npm ci --legacy-peer-deps && \
     npm cache clean --force
 
-# Build application
+# Copy source and config
 COPY src ./src
-COPY tsconfig.json ./
+COPY public ./public
+COPY next.config.mjs tsconfig.json tailwind.config.ts postcss.config.mjs ./
+
+# Build with standalone output
 RUN npm run build
 
 # Final production image
@@ -32,10 +35,10 @@ RUN apk add --no-cache \
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Copy built application from builder
-COPY --from=builder --chown=nodejs:nodejs /build/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /build/node_modules ./node_modules
-COPY --from=builder --chown=nodejs:nodejs /build/package*.json ./
+# Copy standalone output from builder
+COPY --from=builder --chown=nodejs:nodejs /build/.next/standalone ./
+COPY --from=builder --chown=nodejs:nodejs /build/.next/static ./.next/static
+COPY --from=builder --chown=nodejs:nodejs /build/public ./public
 
 # Security: Read-only filesystem except for necessary directories
 RUN chmod -R 755 /app && \
@@ -51,10 +54,10 @@ EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:3000/health || exit 1
+    CMD curl -f http://localhost:3000/api/v1/health || exit 1
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["/usr/sbin/dumb-init", "--"]
 
-# Start application
-CMD ["node", "dist/index.js"]
+# Start Next.js standalone server
+CMD ["node", "server.js"]

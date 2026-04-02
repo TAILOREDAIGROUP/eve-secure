@@ -20,7 +20,7 @@ const PUBLIC_ROUTES = new Set([
 
 function isPublicRoute(pathname: string): boolean {
   if (PUBLIC_ROUTES.has(pathname)) return true;
-  if (pathname.startsWith('/api/webhooks/')) return true;
+  if (pathname.startsWith('/api/webhooks/') || pathname.startsWith('/api/v1/webhooks/')) return true;
   if (pathname.startsWith('/login')) return true;
   if (pathname.startsWith('/signup')) return true;
   return false;

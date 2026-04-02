@@ -1,3 +1,4 @@
+# LOCAL DEVELOPMENT ONLY — do not use these credentials in production
 version: "3.9"
 
 services:
